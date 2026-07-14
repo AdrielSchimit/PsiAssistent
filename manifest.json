@@ -1,0 +1,35 @@
+{
+  "name": "PsyAssist",
+  "short_name": "PsyAssist",
+  "description": "Gestão inteligente para psicólogos. Pacientes, agenda e financeiro num só lugar.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#7C5CFC",
+  "background_color": "#0D0C1D",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["medical", "productivity", "lifestyle"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
