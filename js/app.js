@@ -2,6 +2,12 @@
 
 const App = (() => {
   function init() {
+    // Apply saved theme
+    const settings = DB.getSettings();
+    if (settings.theme) {
+      document.documentElement.setAttribute('data-theme', settings.theme);
+    }
+
     // Seed demo data if first time
     DB.seedDemoData();
 

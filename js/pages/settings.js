@@ -1,9 +1,19 @@
 // PsyAssist — Settings Page
 
 const SettingsPage = (() => {
+  const THEMES = [
+    { id: 'indigo', name: 'Índigo Clássico', color: '#4F46E5' },
+    { id: 'emerald', name: 'Esmeralda', color: '#10B981' },
+    { id: 'graphite', name: 'Grafite', color: '#334155' },
+    { id: 'lavender', name: 'Lavanda', color: '#A855F7' },
+    { id: 'rose', name: 'Rose Elegante', color: '#F43F5E' },
+    { id: 'peach', name: 'Pêssego', color: '#F97316' }
+  ];
+
   function render() {
     const settings = DB.getSettings();
     const template = window.WhatsApp.getTemplate();
+    const currentTheme = settings.theme || 'indigo';
     
     return `
       <div class="page-container">
@@ -20,6 +30,18 @@ const SettingsPage = (() => {
           </div>
         </div>
         
+        <div class="settings-section">
+          <div class="settings-section__title">Temas & Cores</div>
+          <div class="theme-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px;">
+            ${THEMES.map(t => `
+              <div class="theme-option" onclick="window.SettingsPage.changeTheme('${t.id}')" style="cursor:pointer; text-align:center; padding: 12px 8px; border-radius: var(--r-md); border: 2px solid ${currentTheme === t.id ? 'var(--primary)' : 'var(--border)'}; background: var(--card);">
+                <div style="width:24px; height:24px; border-radius:50%; background:${t.color}; margin:0 auto 8px;"></div>
+                <div style="font-size:11px; font-weight:600; color:var(--text)">${t.name}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
         <div class="settings-section">
           <div class="settings-section__title">WhatsApp Bot</div>
           
@@ -69,7 +91,12 @@ const SettingsPage = (() => {
           </div>
         </div>
         
-        <div class="version-tag">PsyAssist v1.0 • PWA Edition</div>
+        <div class="version-tag" style="text-align: center; margin-top: 32px; padding-bottom: 16px; color: var(--text-muted); font-size: 12px;">
+          PsyAssist v1.0 • PWA Edition<br>
+          <span style="display:inline-block; margin-top:6px; padding:4px 12px; background:var(--surface); border-radius:12px; font-weight:600; font-size:11px;">
+            Desenvolvido por 🚀 <span style="color:var(--primary)">Skull Studio</span>
+          </span>
+        </div>
       </div>
     `;
   }
@@ -154,7 +181,16 @@ const SettingsPage = (() => {
     }
   }
 
-  return { render, onEnter, editProfile, editTemplate, exportData, clearData };
+  function changeTheme(themeId) {
+    const settings = DB.getSettings();
+    settings.theme = themeId;
+    DB.saveSettings(settings);
+    document.documentElement.setAttribute('data-theme', themeId);
+    Router.navigate('settings', false);
+    App.toast('Tema atualizado!', 'success');
+  }
+
+  return { render, onEnter, editProfile, editTemplate, exportData, clearData, changeTheme };
 })();
 
 window.SettingsPage = SettingsPage;
