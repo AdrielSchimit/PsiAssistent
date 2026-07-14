@@ -22,7 +22,10 @@ const SettingsPage = (() => {
         </div>
         
         <div class="profile-card">
-          <div class="profile-avatar">Dr.</div>
+          <div class="profile-avatar" style="cursor:pointer; overflow:hidden; position:relative; ${settings.avatar ? 'background:transparent' : ''}" onclick="document.getElementById('avatar-upload').click()" title="Alterar foto">
+            ${settings.avatar ? `<img src="${settings.avatar}" style="width:100%; height:100%; object-fit:cover">` : ((settings.doctorName || 'Dr').replace(/[^a-zA-Z]/g,'').slice(0,2).toUpperCase())}
+            <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.5); font-size:10px; height:18px; display:flex; align-items:center; justify-content:center; color:white">📷</div>
+          </div>
           <div class="profile-info">
             <div class="profile-info__name">${settings.doctorName || 'Nome do Profissional'}</div>
             <div class="profile-info__crp">${settings.crp || 'CRP não informado'}</div>
@@ -97,6 +100,7 @@ const SettingsPage = (() => {
             Desenvolvido por 🚀 <span style="color:var(--primary)">Skull Studio</span>
           </span>
         </div>
+        <input type="file" id="avatar-upload" accept="image/*" class="hidden">
       </div>
     `;
   }
@@ -177,6 +181,38 @@ const SettingsPage = (() => {
           }
         };
         reader.readAsText(file);
+      });
+    }
+
+    const avatarInput = document.getElementById('avatar-upload');
+    if (avatarInput) {
+      avatarInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const size = Math.min(img.width, img.height, 300);
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const offsetX = (img.width - size) / 2;
+            const offsetY = (img.height - size) / 2;
+            ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
+            
+            const base64 = canvas.toDataURL('image/jpeg', 0.8);
+            const settings = DB.getSettings();
+            settings.avatar = base64;
+            DB.saveSettings(settings);
+            
+            Router.navigate('settings', false);
+            App.toast('Foto atualizada!', 'success');
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
       });
     }
   }
