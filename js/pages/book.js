@@ -12,6 +12,11 @@ const BookPage = (() => {
       isEdit = true;
     }
 
+    let displayPhone = patient.phone || '';
+    if (displayPhone.startsWith('55') && displayPhone.length > 11) {
+      displayPhone = displayPhone.substring(2);
+    }
+
     return `
       <div class="page-container">
         <div class="page-header">
@@ -39,8 +44,11 @@ const BookPage = (() => {
           </div>
           
           <div class="form-group">
-            <label class="form-label">WhatsApp (com DDD)</label>
-            <input type="tel" id="p-phone" class="form-input" value="${patient.phone}" placeholder="Ex: 11999999999">
+            <label class="form-label">WhatsApp (DDD + Número)</label>
+            <div style="display:flex; align-items:center; gap:8px">
+              <div style="background:var(--surface); padding:0 12px; height:48px; border-radius:var(--r-md); border:1px solid var(--border); display:flex; align-items:center; font-weight:500; color:var(--text-secondary); flex-shrink:0">+55</div>
+              <input type="tel" id="p-phone" class="form-input" value="${displayPhone}" placeholder="Ex: 11999999999" style="flex:1">
+            </div>
           </div>
           
           <div class="form-row">
