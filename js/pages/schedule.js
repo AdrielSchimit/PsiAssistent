@@ -110,10 +110,12 @@ const SchedulePage = (() => {
         const ws = btn.getAttribute('data-ws');
         const isNowActive = DB.toggleCancel(pid, ws);
         
-        // Re-render
-        Router.navigate('schedule', false);
         App.toast(isNowActive ? 'Sessão reativada' : 'Sessão cancelada', isNowActive ? 'success' : 'error');
       });
+    });
+
+    return window.Store.subscribe('db:change', ({ type }) => {
+      if (type === 'db:patients' || type === 'db:cancels') Router.refresh();
     });
   }
 

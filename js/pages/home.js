@@ -125,7 +125,9 @@ const HomePage = (() => {
   }
 
   function onEnter() {
-    // any dom binding if needed
+    return window.Store.subscribe('db:change', ({ type }) => {
+      if (type === 'db:patients' || type === 'db:payments') Router.refresh();
+    });
   }
 
   return { render, onEnter };

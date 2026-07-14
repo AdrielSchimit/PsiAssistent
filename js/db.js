@@ -8,19 +8,57 @@ const DB = (() => {
     SETTINGS: 'psy_settings',
   };
 
+  const STORAGE_PREFIX = 'psy:b64:v1:';
+  const KEY_EVENTS = {
+    [KEYS.PATIENTS]: 'db:patients',
+    [KEYS.PAYMENTS]: 'db:payments',
+    [KEYS.CANCELS]: 'db:cancels',
+    [KEYS.SETTINGS]: 'db:settings',
+  };
+
   // ─── Helpers ────────────────────────────────────────────
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
 
-  function getAll(key) {
+  // Obfuscation only: Base64 is reversible and is not encryption.
+  function encode(data) {
+    const bytes = new TextEncoder().encode(JSON.stringify(data));
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    }
+    return STORAGE_PREFIX + btoa(binary);
+  }
+
+  function decode(raw, fallback) {
+    if (!raw) return fallback;
     try {
-      return JSON.parse(localStorage.getItem(key)) || [];
-    } catch { return []; }
+      if (!raw.startsWith(STORAGE_PREFIX)) return JSON.parse(raw); // Legacy JSON
+      const binary = atob(raw.slice(STORAGE_PREFIX.length));
+      const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+      return JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+      return fallback;
+    }
+  }
+
+  function getStored(key, fallback) {
+    return decode(localStorage.getItem(key), fallback);
+  }
+
+  function setStored(key, data) {
+    localStorage.setItem(key, encode(data));
+    window.Store.publish(KEY_EVENTS[key] || 'db:storage', { key });
+  }
+
+  function getAll(key) {
+    const data = getStored(key, []);
+    return Array.isArray(data) ? data : [];
   }
 
   function setAll(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
+    setStored(key, data);
   }
 
   // ─── PATIENTS ────────────────────────────────────────────
@@ -167,14 +205,12 @@ const DB = (() => {
 
   // ─── SETTINGS ────────────────────────────────────────────
   function getSettings() {
-    try {
-      return JSON.parse(localStorage.getItem(KEYS.SETTINGS)) || {};
-    } catch { return {}; }
+    return getStored(KEYS.SETTINGS, {});
   }
 
   function saveSettings(data) {
     const current = getSettings();
-    localStorage.setItem(KEYS.SETTINGS, JSON.stringify({ ...current, ...data }));
+    setStored(KEYS.SETTINGS, { ...current, ...data });
   }
 
   // ─── DATE UTILS ─────────────────────────────────────────

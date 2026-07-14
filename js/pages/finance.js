@@ -116,11 +116,14 @@ const FinancePage = (() => {
       el.addEventListener('click', (e) => {
         const pid = e.currentTarget.getAttribute('data-pid');
         const updated = DB.togglePayment(pid, currentMonthStr);
-        Router.navigate('finance', false);
         if (updated) {
           App.toast(updated.paid ? 'Marcado como Pago' : 'Marcado como Pendente', updated.paid ? 'success' : 'warning');
         }
       });
+    });
+
+    return window.Store.subscribe('db:change', ({ type }) => {
+      if (type === 'db:patients' || type === 'db:payments') Router.refresh();
     });
   }
 

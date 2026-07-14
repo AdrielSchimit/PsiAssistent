@@ -3,6 +3,8 @@
 const Router = (() => {
   const routes = {};
   let currentRoute = null;
+  let routeCleanup = null;
+  let refreshTimer = null;
 
   function init() {
     window.addEventListener('popstate', handlePopState);
@@ -24,6 +26,11 @@ const Router = (() => {
 
   function navigate(name, pushState = true) {
     if (!routes[name]) return;
+
+    if (routeCleanup) {
+      routeCleanup();
+      routeCleanup = null;
+    }
     
     if (pushState && currentRoute !== name) {
       window.history.pushState({ route: name }, '', `#${name}`);
@@ -47,7 +54,7 @@ const Router = (() => {
       
       // Execute post-render logic
       if (routes[name].onEnter) {
-        routes[name].onEnter();
+        routeCleanup = routes[name].onEnter() || null;
       }
       
       // Animate in
@@ -56,6 +63,11 @@ const Router = (() => {
       contentDiv.classList.add('page-enter');
       contentDiv.style.opacity = '1';
     }, 50);
+  }
+
+  function refresh() {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => navigate(currentRoute, false), 0);
   }
 
   function handlePopState(e) {
@@ -67,7 +79,7 @@ const Router = (() => {
     }
   }
 
-  return { init, register, navigate };
+  return { init, register, navigate, refresh };
 })();
 
 window.Router = Router;

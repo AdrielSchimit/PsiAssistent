@@ -182,33 +182,14 @@ const BookPage = (() => {
         recognition.start();
         
         recognition.onresult = (event) => {
-          const text = event.results[0][0].transcript.toLowerCase();
-          
-          const days = { 'segunda': 1, 'terça': 2, 'quarta': 3, 'quinta': 4, 'sexta': 5, 'sábado': 6, 'domingo': 0 };
-          let foundDay = null;
-          let name = text;
-          
-          for (let d in days) {
-            if (text.includes(d)) {
-              foundDay = days[d];
-              name = text.split(d)[0].trim();
-              break;
-            }
-          }
-          
-          let valueMatch = text.match(/(\d+)\s*reais/);
-          if (valueMatch) document.getElementById('p-value').value = valueMatch[1];
-          
-          let timeMatch = text.match(/(\d+)\s*horas?/);
-          if (timeMatch) document.getElementById('p-time').value = timeMatch[1].padStart(2, '0') + ':00';
-          
-          if (name) {
-             document.getElementById('p-name').value = name.replace(/\b\w/g, c => c.toUpperCase());
-          }
-          
-          if (foundDay !== null) document.getElementById('p-day').value = foundDay;
-          
-          document.getElementById('p-notes').value = "Ditado: " + event.results[0][0].transcript;
+          const transcript = event.results[0][0].transcript;
+          const parsed = VoiceParser.parse(transcript);
+
+          if (parsed.name) document.getElementById('p-name').value = parsed.name;
+          if (parsed.valuePerSession !== null) document.getElementById('p-value').value = parsed.valuePerSession;
+          if (parsed.time) document.getElementById('p-time').value = parsed.time;
+          if (parsed.dayOfWeek !== null) document.getElementById('p-day').value = parsed.dayOfWeek;
+          document.getElementById('p-notes').value = `Ditado: ${transcript}`;
           App.toast('Preenchido por Voz!', 'success');
         };
         
