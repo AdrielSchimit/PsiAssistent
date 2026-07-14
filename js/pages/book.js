@@ -25,12 +25,16 @@ const BookPage = (() => {
         
         ${!isEdit ? `
         <div class="card mb-4 text-center card--elevated" style="padding:var(--sp-5); border: 1px dashed var(--primary)">
-          <div class="quick-action__icon" style="margin: 0 auto var(--sp-3); width:64px; height:64px; background:var(--primary-subtle); color:var(--primary-light)">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          <h3 style="font-size:16px; margin-bottom:4px">Assistente Inteligente</h3>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px">Dite os dados do paciente ou tire uma foto do seu caderninho.</p>
+          <div style="display:flex; gap:12px; justify-content:center">
+            <button id="btn-voice" type="button" class="btn btn-primary" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px">
+              🎤 Ditar
+            </button>
+            <button id="btn-camera" type="button" class="btn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--primary); color:var(--primary); background:transparent">
+              📷 Foto
+            </button>
           </div>
-          <h3 style="font-size:16px; margin-bottom:4px">Cadastrar via Foto</h3>
-          <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px">Tire foto do caderninho e a IA preenche o formulário para você.</p>
-          <button id="btn-camera" class="btn btn-primary">Abrir Câmera</button>
         </div>
         
         <div style="text-align:center; margin-bottom:var(--sp-4); font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; font-weight:600">Ou preencha manualmente</div>
@@ -147,13 +151,75 @@ const BookPage = (() => {
       Router.navigate('patients');
     });
 
-    const btnCam = document.getElementById('btn-camera');
-    if (btnCam) {
-      btnCam.addEventListener('click', () => {
+    const btnCamera = document.getElementById('btn-camera');
+    if (btnCamera) {
+      btnCamera.addEventListener('click', () => {
         window.OCR.openCamera((text) => {
           const parsed = window.OCR.parseTextToPatient(text);
           fillFormFromOCR(parsed);
         });
+      });
+    }
+
+    const btnVoice = document.getElementById('btn-voice');
+    if (btnVoice) {
+      btnVoice.addEventListener('click', () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          App.toast('Seu navegador não suporta reconhecimento de voz.', 'error');
+          return;
+        }
+        
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.interimResults = false;
+        
+        btnVoice.innerHTML = '🎙️ Escutando...';
+        btnVoice.style.background = 'var(--accent)';
+        btnVoice.style.color = 'white';
+        btnVoice.style.borderColor = 'transparent';
+        
+        recognition.start();
+        
+        recognition.onresult = (event) => {
+          const text = event.results[0][0].transcript.toLowerCase();
+          
+          const days = { 'segunda': 1, 'terça': 2, 'quarta': 3, 'quinta': 4, 'sexta': 5, 'sábado': 6, 'domingo': 0 };
+          let foundDay = null;
+          let name = text;
+          
+          for (let d in days) {
+            if (text.includes(d)) {
+              foundDay = days[d];
+              name = text.split(d)[0].trim();
+              break;
+            }
+          }
+          
+          let valueMatch = text.match(/(\d+)\s*reais/);
+          if (valueMatch) document.getElementById('p-value').value = valueMatch[1];
+          
+          let timeMatch = text.match(/(\d+)\s*horas?/);
+          if (timeMatch) document.getElementById('p-time').value = timeMatch[1].padStart(2, '0') + ':00';
+          
+          if (name) {
+             document.getElementById('p-name').value = name.replace(/\b\w/g, c => c.toUpperCase());
+          }
+          
+          if (foundDay !== null) document.getElementById('p-day').value = foundDay;
+          
+          document.getElementById('p-notes').value = "Ditado: " + event.results[0][0].transcript;
+          App.toast('Preenchido por Voz!', 'success');
+        };
+        
+        recognition.onend = () => {
+          btnVoice.innerHTML = '🎤 Ditar';
+          btnVoice.style.background = '';
+        };
+        
+        recognition.onerror = (e) => {
+          App.toast('Erro no microfone: ' + e.error, 'error');
+        };
       });
     }
 
