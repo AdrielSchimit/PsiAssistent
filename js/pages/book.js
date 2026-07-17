@@ -44,7 +44,10 @@ const BookPage = (() => {
           
           <div class="form-group">
             <label class="form-label">Nome Completo</label>
-            <input type="text" id="p-name" class="form-input" value="${patient.name}" required placeholder="Ex: João Silva">
+            <div style="display:flex; gap:8px">
+              <input type="text" id="p-name" class="form-input" value="${patient.name}" required placeholder="Ex: João Silva" style="flex:1">
+              <button type="button" class="mic-field-btn" data-target="p-name" title="Ditar nome" style="width:48px; height:48px; flex-shrink:0; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:18px;">🎤</button>
+            </div>
           </div>
           
           <div class="form-group">
@@ -58,7 +61,10 @@ const BookPage = (() => {
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Valor (R$)</label>
-              <input type="number" id="p-value" class="form-input" value="${patient.valuePerSession}" required placeholder="Ex: 150">
+              <div style="display:flex; gap:8px">
+                <input type="number" id="p-value" class="form-input" value="${patient.valuePerSession}" required placeholder="Ex: 150" style="flex:1">
+                <button type="button" class="mic-field-btn" data-target="p-value" title="Ditar valor" style="width:48px; height:48px; flex-shrink:0; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:18px;">🎤</button>
+              </div>
             </div>
           </div>
 
@@ -83,8 +89,11 @@ const BookPage = (() => {
           </div>
           
           <div class="form-group">
-            <label class="form-label">Anotações do OCR / Extras</label>
-            <textarea id="p-notes" class="form-input" rows="3" placeholder="Opcional">${patient.notes}</textarea>
+            <label class="form-label">Anotações / Observações</label>
+            <div style="position:relative">
+              <textarea id="p-notes" class="form-input" rows="3" placeholder="Opcional">${patient.notes}</textarea>
+              <button type="button" class="mic-field-btn" data-target="p-notes" title="Ditar observação" style="position:absolute; bottom:8px; right:8px; width:36px; height:36px; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:16px;">🎤</button>
+            </div>
           </div>
           
           ${isEdit ? `
@@ -161,6 +170,43 @@ const BookPage = (() => {
       });
     }
 
+    // === Per-field mic buttons (#1) ===
+    function startVoiceForField(targetId, btn) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        App.toast('Navegador sem suporte a voz.', 'error');
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.interimResults = false;
+      const originalText = btn.textContent;
+      btn.textContent = '🔴';
+      btn.disabled = true;
+      recognition.start();
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        const el = document.getElementById(targetId);
+        if (!el) return;
+        if (el.tagName === 'TEXTAREA') {
+          el.value = el.value ? el.value + ' ' + text : text;
+        } else if (el.type === 'number') {
+          const num = text.replace(/[^\d]/g, '');
+          if (num) el.value = num;
+        } else {
+          el.value = text.replace(/\b\w/g, c => c.toUpperCase());
+        }
+        App.toast('Campo preenchido!', 'success');
+      };
+      recognition.onend = () => { btn.textContent = originalText; btn.disabled = false; };
+      recognition.onerror = (e) => { App.toast('Erro: ' + e.error, 'error'); btn.disabled = false; btn.textContent = originalText; };
+    }
+
+    document.querySelectorAll('.mic-field-btn').forEach(btn => {
+      btn.addEventListener('click', () => startVoiceForField(btn.getAttribute('data-target'), btn));
+    });
+
+    // === Main voice button (all fields at once) ===
     const btnVoice = document.getElementById('btn-voice');
     if (btnVoice) {
       btnVoice.addEventListener('click', () => {
@@ -169,15 +215,12 @@ const BookPage = (() => {
           App.toast('Seu navegador não suporta reconhecimento de voz.', 'error');
           return;
         }
-        
         const recognition = new SpeechRecognition();
         recognition.lang = 'pt-BR';
         recognition.interimResults = false;
-        
         btnVoice.innerHTML = '🎙️ Escutando...';
-        btnVoice.style.background = 'var(--accent)';
+        btnVoice.style.background = 'var(--primary-dark)';
         btnVoice.style.color = 'white';
-        btnVoice.style.borderColor = 'transparent';
         
         recognition.start();
         

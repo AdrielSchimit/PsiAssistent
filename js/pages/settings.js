@@ -49,11 +49,17 @@ const SettingsPage = (() => {
           <div class="settings-section__title">WhatsApp Bot</div>
           
           <div class="template-card">
-            <div style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">Mensagem Padrão de Cobrança</div>
-            <div class="template-preview" id="template-preview">
-              ${formatTemplatePreview(template)}
-            </div>
-            <button class="btn btn-secondary btn-sm mt-3 w-full" onclick="window.SettingsPage.editTemplate()">Editar Mensagem</button>
+            <div style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">Mensagens rápidas por situação</div>
+            ${Object.entries(window.WhatsApp.getTemplateLabels()).map(([key, label]) => {
+              const tpls = window.WhatsApp.getTemplates();
+              const text = tpls[key] || '';
+              return `
+              <div style="margin-bottom:10px">
+                <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:4px">${label}</div>
+                <div style="font-size:12px; color:var(--text); background:var(--surface); border-radius:var(--r-md); padding:10px 12px; line-height:1.5; margin-bottom:4px">${text.replace(/{nome}/g,'<span style="background:var(--primary-subtle);color:var(--primary);padding:1px 5px;border-radius:4px;font-weight:600">{nome}</span>').replace(/{valor}/g,'<span style="background:var(--primary-subtle);color:var(--primary);padding:1px 5px;border-radius:4px;font-weight:600">{valor}</span>')}</div>
+                <button class="btn btn-secondary btn-sm" onclick="window.SettingsPage.editTemplateByKey('${key}')" style="font-size:11px; padding:4px 12px">Editar</button>
+              </div>`;
+            }).join('')}
           </div>
         </div>
 
@@ -82,6 +88,16 @@ const SettingsPage = (() => {
               <input type="file" id="import-file" class="hidden" accept=".json">
             </div>
             
+            <div class="settings-item" onclick="window.SettingsPage.exportPDF()">
+              <div class="settings-item__icon" style="background:rgba(239,68,68,0.1); color:#EF4444">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              </div>
+              <div class="settings-item__content">
+                <div class="settings-item__label">Exportar PDF do Mês</div>
+                <div class="settings-item__desc">Gerar relatório financeiro</div>
+              </div>
+            </div>
+
             <div class="settings-item" onclick="window.SettingsPage.clearData()">
               <div class="settings-item__icon" style="background:var(--danger-bg); color:var(--danger)">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -226,7 +242,54 @@ const SettingsPage = (() => {
     App.toast('Tema atualizado!', 'success');
   }
 
-  return { render, onEnter, editProfile, editTemplate, exportData, clearData, changeTheme };
+  function editTemplateByKey(key) {
+    const tpls = window.WhatsApp.getTemplates();
+    const labels = window.WhatsApp.getTemplateLabels();
+    const current = tpls[key] || '';
+    const newText = prompt(`Editar: ${labels[key]}\n\nUse {nome} para o nome do paciente e {valor} para o valor.`, current);
+    if (newText !== null && newText.trim()) {
+      window.WhatsApp.saveTemplateByKey(key, newText.trim());
+      Router.navigate('settings', false);
+      App.toast('Mensagem atualizada!', 'success');
+    }
+  }
+
+  function exportPDF() {
+    const settings = DB.getSettings();
+    const month = DB.getCurrentMonth();
+    DB.ensureMonthPayments(month);
+    const summary = DB.getMonthSummary(month);
+    const payments = DB.getPaymentsByMonth(month);
+    const patients = DB.getPatients();
+    const docName = settings.doctorName || 'Profissional';
+
+    const rows = payments.map(pay => {
+      const p = patients.find(pat => pat.id === pay.patientId);
+      if (!p || !p.active) return '';
+      return `<tr style="border-bottom:1px solid #eee">
+        <td style="padding:8px 12px">${p.name}</td>
+        <td style="padding:8px 12px">${DB.getDayOfWeekName(p.dayOfWeek)}</td>
+        <td style="padding:8px 12px">R$ ${pay.value.toFixed(2).replace('.',',')}</td>
+        <td style="padding:8px 12px; color:${pay.paid ? '#10B981' : '#F43F5E'}; font-weight:600">${pay.paid ? '✅ Pago' : '⏳ Pendente'}</td>
+      </tr>`;
+    }).join('');
+
+    const w = window.open('', '_blank');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório - ${DB.formatMonth(month)}</title>
+    <style>body{font-family:Inter,sans-serif;padding:32px;color:#1e293b} h1{color:#4F46E5} table{width:100%;border-collapse:collapse} th{background:#f8fafc;padding:8px 12px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#64748b} @media print{.no-print{display:none}}</style></head>
+    <body>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:2px solid #4F46E5;padding-bottom:16px">
+        <div><h1 style="margin:0">PsyAssist</h1><div style="color:#64748b;font-size:14px">${docName} · Relatório Mensal</div></div>
+        <div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#4F46E5">R$ ${summary.received.toFixed(2).replace('.',',')}</div><div style="font-size:12px;color:#64748b">Recebido de R$ ${summary.total.toFixed(2).replace('.',',')} previstos</div></div>
+      </div>
+      <table><thead><tr><th>Paciente</th><th>Dia</th><th>Valor</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>
+      <div style="margin-top:32px;font-size:12px;color:#94a3b8;text-align:center">Gerado em ${new Date().toLocaleDateString('pt-BR')} · Desenvolvido por Skull Studio 🚀</div>
+      <div class="no-print" style="margin-top:24px;text-align:center"><button onclick="window.print()" style="background:#4F46E5;color:white;border:none;padding:12px 32px;border-radius:8px;font-size:14px;cursor:pointer">Imprimir / Salvar PDF</button></div>
+    </body></html>`);
+    w.document.close();
+  }
+
+  return { render, onEnter, editProfile, editTemplate, editTemplateByKey, exportData, exportPDF, clearData, changeTheme };
 })();
 
 window.SettingsPage = SettingsPage;

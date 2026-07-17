@@ -1,28 +1,63 @@
 // PsyAssist — Home Page
 
 const HomePage = (() => {
+  function getGreeting() {
+    const h = new Date().getHours();
+    if (h < 12) return 'Bom dia';
+    if (h < 18) return 'Boa tarde';
+    return 'Boa noite';
+  }
+
   function render() {
     const month = DB.getCurrentMonth();
+    DB.ensureMonthPayments(month);
     const summary = DB.getMonthSummary(month);
     const patients = DB.getActivePatients();
-    
-    // Calculate today's sessions
+    const settings = DB.getSettings();
+    const docName = (settings.doctorName || 'Doutor(a)').split(' ')[0];
+
+    // === #13 Tema adaptativo por horário ===
+    const h = new Date().getHours();
+    let autoTheme = null;
+    if (!settings.theme) {
+      if (h >= 6 && h < 12) autoTheme = 'indigo';
+      else if (h >= 12 && h < 18) autoTheme = 'emerald';
+      else autoTheme = 'graphite';
+      document.documentElement.setAttribute('data-theme', autoTheme);
+    }
+
     const todayNum = new Date().getDay();
     const todaySessions = patients.filter(p => parseInt(p.dayOfWeek) === todayNum);
+
+    // === #8 Alerta de inadimplência ===
+    const pendingPayments = DB.getPaymentsByMonth(month).filter(p => !p.paid);
+    const overduePatients = pendingPayments.map(pay =>
+      patients.find(p => p.id === pay.patientId)
+    ).filter(Boolean);
 
     return `
       <div class="page-container">
         <div class="page-header">
-          <div class="page-header__greeting">Olá, Dr(a).</div>
+          <div class="page-header__greeting">${getGreeting()}, ${docName} 👋</div>
           <h1 class="page-header__title">Psy<span>Assist</span></h1>
         </div>
         
         ${todaySessions.length > 0 ? `
-        <div class="today-banner">
+        <div class="today-banner" onclick="Router.navigate('schedule')" style="cursor:pointer">
           <div class="today-banner__icon">🗓️</div>
           <div class="today-banner__text">
             <div class="today-banner__title">Você tem ${todaySessions.length} sessão(ões) hoje</div>
-            <div class="today-banner__subtitle">Confira sua agenda para mais detalhes</div>
+            <div class="today-banner__subtitle">${todaySessions.map(p => p.name.split(' ')[0]).join(', ')}</div>
+          </div>
+        </div>
+        ` : ''}
+
+        ${overduePatients.length > 3 ? `
+        <div style="background:linear-gradient(135deg,#F43F5E,#BE123C); border-radius:var(--r-md); padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; gap:12px; cursor:pointer;" onclick="Router.navigate('finance')">
+          <span style="font-size:24px">🚨</span>
+          <div>
+            <div style="font-size:13px; font-weight:700; color:white">${overduePatients.length} pacientes em aberto este mês</div>
+            <div style="font-size:11px; color:rgba(255,255,255,0.8)">Toque para ver o painel financeiro</div>
           </div>
         </div>
         ` : ''}
@@ -44,7 +79,33 @@ const HomePage = (() => {
             <div class="stat-card__label">Recebido este Mês</div>
           </div>
         </div>
-        
+
+        <!-- #4 Modo Foco -->
+        ${todaySessions.length > 0 ? `
+        <button id="btn-focus-mode" onclick="window.HomePage.toggleFocus()" style="
+          width:100%; background:linear-gradient(135deg,var(--primary),var(--primary-light));
+          color:white; border:none; border-radius:var(--r-md); padding:14px;
+          font-size:14px; font-weight:600; cursor:pointer; margin-bottom:16px;
+          display:flex; align-items:center; justify-content:center; gap:8px;
+          box-shadow: 0 4px 12px var(--primary-glow); transition: all 0.2s;
+        ">
+          🧘 Modo Foco — Iniciar Sessão
+        </button>` : ''}
+
+        <div id="focus-overlay" style="display:none; position:fixed; inset:0; z-index:999;
+          background:var(--bg); flex-direction:column; align-items:center; justify-content:center;">
+          <div style="text-align:center; padding:var(--sp-6)">
+            <div style="font-size:14px; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:1px">Em atendimento</div>
+            <div id="focus-patient-name" style="font-size:28px; font-weight:800; color:var(--text); margin-bottom:32px"></div>
+            <div id="focus-timer" style="font-size:72px; font-weight:800; font-family:monospace; color:var(--primary); letter-spacing:4px; margin-bottom:32px">00:00</div>
+            <div style="font-size:13px; color:var(--text-muted); margin-bottom:32px">Sessão em andamento</div>
+            <button onclick="window.HomePage.toggleFocus()" style="
+              background:var(--surface); border:1px solid var(--border); border-radius:var(--r-full);
+              padding:12px 32px; font-size:14px; font-weight:600; cursor:pointer; color:var(--text)
+            ">⏹ Encerrar Sessão</button>
+          </div>
+        </div>
+
         <div class="section-header mt-4">
           <h2 class="section-title">Acesso Rápido</h2>
         </div>
@@ -89,6 +150,44 @@ const HomePage = (() => {
     `;
   }
 
+  let focusInterval = null;
+  let focusSeconds = 0;
+  let isFocusMode = false;
+
+  function toggleFocus() {
+    const overlay = document.getElementById('focus-overlay');
+    if (!overlay) return;
+
+    if (!isFocusMode) {
+      // Start focus mode
+      isFocusMode = true;
+      focusSeconds = 0;
+      overlay.style.display = 'flex';
+
+      const patients = DB.getActivePatients();
+      const todayNum = new Date().getDay();
+      const todayPatient = patients.find(p => parseInt(p.dayOfWeek) === todayNum);
+      const nameEl = document.getElementById('focus-patient-name');
+      if (nameEl && todayPatient) nameEl.textContent = todayPatient.name;
+      else if (nameEl) nameEl.textContent = 'Sessão Livre';
+
+      const timerEl = document.getElementById('focus-timer');
+      focusInterval = setInterval(() => {
+        focusSeconds++;
+        const m = String(Math.floor(focusSeconds / 60)).padStart(2, '0');
+        const s = String(focusSeconds % 60).padStart(2, '0');
+        if (timerEl) timerEl.textContent = `${m}:${s}`;
+      }, 1000);
+    } else {
+      // End focus mode
+      isFocusMode = false;
+      clearInterval(focusInterval);
+      overlay.style.display = 'none';
+      const m = Math.floor(focusSeconds / 60);
+      App.toast(`Sessão encerrada! Duração: ${m} min`, 'success');
+    }
+  }
+
   function renderPendingList(month) {
     const payments = DB.getPaymentsByMonth(month).filter(p => !p.paid);
     const patients = DB.getActivePatients();
@@ -125,12 +224,12 @@ const HomePage = (() => {
   }
 
   function onEnter() {
-    return window.Store.subscribe('db:change', ({ type }) => {
+    return window.Store?.subscribe('db:change', ({ type }) => {
       if (type === 'db:patients' || type === 'db:payments') Router.refresh();
     });
   }
 
-  return { render, onEnter };
+  return { render, onEnter, toggleFocus };
 })();
 
 window.HomePage = HomePage;
