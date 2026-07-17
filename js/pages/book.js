@@ -232,8 +232,7 @@ const BookPage = (() => {
           if (parsed.valuePerSession !== null) document.getElementById('p-value').value = parsed.valuePerSession;
           if (parsed.time) document.getElementById('p-time').value = parsed.time;
           if (parsed.dayOfWeek !== null) document.getElementById('p-day').value = parsed.dayOfWeek;
-          document.getElementById('p-notes').value = `Ditado: ${transcript}`;
-          App.toast('Preenchido por Voz!', 'success');
+          App.toast('Preenchido por Voz! Confira os campos.', 'success');
         };
         
         recognition.onend = () => {
