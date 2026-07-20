@@ -64,6 +64,22 @@ const SettingsPage = (() => {
         </div>
 
         <div class="settings-section">
+          <div class="settings-section__title">Segurança</div>
+          <div class="settings-list">
+            <div class="settings-item" onclick="window.SettingsPage.managePIN()">
+              <div class="settings-item__icon" style="background:rgba(79,70,229,0.1); color:var(--primary)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              </div>
+              <div class="settings-item__content">
+                <div class="settings-item__label" id="pin-status-label">${window.Onboarding?.hasPIN() ? '🔐 PIN Ativo — Alterar' : '🔓 Criar PIN de Segurança'}</div>
+                <div class="settings-item__desc">${window.Onboarding?.hasPIN() ? 'Protege seu app com senha de 4 dígitos' : 'Opcional — impede acesso não autorizado'}</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
           <div class="settings-section__title">Dados e Backup</div>
           
           <div class="settings-list">
@@ -289,7 +305,24 @@ const SettingsPage = (() => {
     w.document.close();
   }
 
-  return { render, onEnter, editProfile, editTemplate, editTemplateByKey, exportData, exportPDF, clearData, changeTheme };
+  function managePIN() {
+    if (window.Onboarding.hasPIN()) {
+      const choice = confirm('PIN ativo!\n\nOK = Alterar PIN\nCancelar = Remover PIN');
+      if (choice) {
+        window.Onboarding.showPINSetup(() => Router.navigate('settings', false));
+      } else {
+        if (confirm('Tem certeza que deseja remover o PIN?')) {
+          window.Onboarding.removePIN();
+          App.toast('PIN removido.', 'success');
+          Router.navigate('settings', false);
+        }
+      }
+    } else {
+      window.Onboarding.showPINSetup(() => Router.navigate('settings', false));
+    }
+  }
+
+  return { render, onEnter, editProfile, editTemplate, editTemplateByKey, exportData, exportPDF, clearData, changeTheme, managePIN };
 })();
 
 window.SettingsPage = SettingsPage;

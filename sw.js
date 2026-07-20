@@ -1,4 +1,4 @@
-const CACHE_NAME = 'psyassist-v2.0';
+const CACHE_NAME = 'psyassist-v2.1';
 const CACHE_ASSETS = [
   './',
   './index.html',
@@ -17,6 +17,7 @@ const CACHE_ASSETS = [
   './js/pages/book.js',
   './js/pages/finance.js',
   './js/pages/settings.js',
+  './js/onboarding.js',
   './js/app.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'
 ];

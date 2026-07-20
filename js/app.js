@@ -8,9 +8,6 @@ const App = (() => {
       document.documentElement.setAttribute('data-theme', settings.theme);
     }
 
-    // Seed demo data if first time
-    DB.seedDemoData();
-
     // Init Install Manager (Chunk 1)
     InstallManager.init();
 
@@ -24,14 +21,16 @@ const App = (() => {
 
     // Init Router (Chunk 3)
     Router.init();
-    
-    // Set initial route based on hash or default to home
-    const hash = window.location.hash.replace('#', '');
-    if (hash && ['home','schedule','book','patients','finance','settings'].includes(hash)) {
-      Router.navigate(hash, false);
-    } else {
-      Router.navigate('home', false);
-    }
+
+    // Boot Onboarding (PIN + Tutorial) — then navigate
+    Onboarding.boot(() => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && ['home','schedule','book','patients','finance','settings'].includes(hash)) {
+        Router.navigate(hash, false);
+      } else {
+        Router.navigate('home', false);
+      }
+    });
 
     // Register Service Worker for PWA Offline support
     if ('serviceWorker' in navigator) {
