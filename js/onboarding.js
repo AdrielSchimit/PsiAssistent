@@ -236,18 +236,13 @@ const Onboarding = (() => {
   }
 
   function clearDemoData() {
-    // Remove only the demo patients by name
+    // Use DB.deletePatient so Base64 encoding is handled correctly
     const DEMO_NAMES = ['Ana Paula Souza', 'Carlos Eduardo', 'Mariana Costa'];
     const patients = DB.getPatients();
-    const demoIds = patients.filter(p => DEMO_NAMES.includes(p.name)).map(p => p.id);
-    demoIds.forEach(id => {
-      const all = DB.getPatients().filter(p => p.id !== id);
-      localStorage.setItem('psy_patients', JSON.stringify(all));
-    });
-    // Also remove their payments
-    const allPayments = JSON.parse(localStorage.getItem('psy_payments') || '[]');
-    const cleaned = allPayments.filter(pay => !demoIds.includes(pay.patientId));
-    localStorage.setItem('psy_payments', JSON.stringify(cleaned));
+    const demoIds = patients
+      .filter(p => DEMO_NAMES.includes(p.name))
+      .map(p => p.id);
+    demoIds.forEach(id => DB.deletePatient(id));
   }
 
   const STEPS = [
@@ -390,20 +385,67 @@ const Onboarding = (() => {
   // ─── BOOT ────────────────────────────────────────────────
 
   function boot(onReady) {
-    // 1. If PIN is set, show lock first
-    if (hasPIN()) {
-      showPINLock(() => {
-        // 2. After unlock: check tutorial
-        if (!isTutorialDone()) {
+    const tutorialDone = isTutorialDone();
+    const pinSet = hasPIN();
+
+    // Step 1: Show install screen if not installed yet
+    // InstallManager listens for 'beforeinstallprompt' — it auto-shows if needed.
+    // We hook into the dismiss/install buttons to then proceed with the rest of the boot.
+    const hasInstalled = localStorage.getItem('psy_has_installed') === 'true';
+
+    if (!hasInstalled) {
+      // Install screen will show automatically via InstallManager when browser fires event.
+      // We patch its hide behavior to trigger tutorial after.
+      const originalHide = InstallManager.hideInstallScreen || (() => {});
+      
+      // Override: after install screen closes (either via install or dismiss), run tutorial
+      const afterInstall = () => {
+        if (!tutorialDone) {
           DB.seedDemoData();
           showTutorial(() => onReady());
+        } else if (pinSet) {
+          showPINLock(() => onReady());
         } else {
           onReady();
         }
+      };
+
+      // Patch the dismiss and install buttons once they exist in the DOM
+      // We use a small observer since the install screen may not exist yet
+      const observer = new MutationObserver(() => {
+        const dismissBtn = document.getElementById('btn-dismiss-install');
+        const installBtn = document.getElementById('btn-install-app');
+        if (dismissBtn) {
+          // Add our hook after the existing listener
+          dismissBtn.addEventListener('click', () => setTimeout(afterInstall, 350));
+          observer.disconnect();
+        }
+        if (installBtn) {
+          installBtn.addEventListener('click', () => setTimeout(afterInstall, 1000));
+        }
       });
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      // Fallback: if 'beforeinstallprompt' never fires (iOS, already installed),
+      // browser won't show install screen — proceed directly.
+      setTimeout(() => {
+        if (!document.getElementById('install-screen')) {
+          afterInstall();
+        }
+      }, 600);
+
     } else {
-      // No PIN: check tutorial
-      if (!isTutorialDone()) {
+      // Already installed — check PIN then tutorial
+      if (pinSet) {
+        showPINLock(() => {
+          if (!tutorialDone) {
+            DB.seedDemoData();
+            showTutorial(() => onReady());
+          } else {
+            onReady();
+          }
+        });
+      } else if (!tutorialDone) {
         DB.seedDemoData();
         showTutorial(() => onReady());
       } else {
