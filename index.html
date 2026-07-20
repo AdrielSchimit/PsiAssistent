@@ -20,17 +20,6 @@
   
   <link rel="stylesheet" href="css/app.css">
   
-  <!-- ERROR CATCHER FOR DEBUGGING -->
-  <script>
-    window.onerror = function(msg, url, line, col, error) {
-      const errDiv = document.createElement('div');
-      errDiv.style.cssText = 'position:fixed; top:0; left:0; width:100%; z-index:99999; background:red; color:white; padding:20px; font-size:12px; font-family:monospace; word-wrap:break-word;';
-      errDiv.innerHTML = `<strong>Error:</strong> ${msg}<br><strong>Line:</strong> ${line}:${col}<br><strong>File:</strong> ${url}<br><pre>${error ? error.stack : ''}</pre>`;
-      document.body.appendChild(errDiv);
-      return false;
-    };
-  </script>
-
   <!-- Tesseract.js for OCR -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>

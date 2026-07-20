@@ -9,6 +9,11 @@ const DB = (() => {
   };
 
   const STORAGE_PREFIX = 'psy:b64:v1:';
+  const DEMO_PATIENTS = [
+    { name: 'Ana Paula Souza', phone: '5511991234567', valuePerSession: 200, dayOfWeek: 1, time: '09:00', notes: 'Ansiedade generalizada' },
+    { name: 'Carlos Eduardo', phone: '5511998765432', valuePerSession: 180, dayOfWeek: 3, time: '14:30', notes: 'Depressao leve' },
+    { name: 'Mariana Costa', phone: '5511987654321', valuePerSession: 220, dayOfWeek: 5, time: '10:00', notes: '' },
+  ];
   const KEY_EVENTS = {
     [KEYS.PATIENTS]: 'db:patients',
     [KEYS.PAYMENTS]: 'db:payments',
@@ -49,7 +54,7 @@ const DB = (() => {
 
   function setStored(key, data) {
     localStorage.setItem(key, encode(data));
-    window.Store.publish(KEY_EVENTS[key] || 'db:storage', { key });
+    window.Store?.publish(KEY_EVENTS[key] || 'db:storage', { key });
   }
 
   function getAll(key) {
@@ -280,15 +285,64 @@ const DB = (() => {
     return names[dow] || '';
   }
 
+  function isDemoPatient(patient) {
+    return patient?.isDemo === true || DEMO_PATIENTS.some(demo =>
+      patient?.name === demo.name && patient?.phone === demo.phone
+    );
+  }
+
+  function clearDemoData() {
+    const demoIds = new Set(getPatients().filter(isDemoPatient).map(patient => patient.id));
+    if (demoIds.size === 0) return;
+
+    setAll(KEYS.PATIENTS, getPatients().filter(patient => !demoIds.has(patient.id)));
+    setAll(KEYS.PAYMENTS, getPayments().filter(payment => !demoIds.has(payment.patientId)));
+    setAll(KEYS.CANCELS, getCancels().filter(cancel => !demoIds.has(cancel.patientId)));
+  }
+
+  function importCollection(value, fallback) {
+    if (!value) return fallback;
+    if (Array.isArray(value)) return value;
+    return decode(value, fallback);
+  }
+
+  function exportBackup() {
+    return {
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      patients: getPatients(),
+      payments: getPayments(),
+      cancels: getCancels(),
+      settings: getSettings(),
+    };
+  }
+
+  function importBackup(data) {
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid backup');
+    }
+
+    setAll(KEYS.PATIENTS, importCollection(data.patients, []));
+    setAll(KEYS.PAYMENTS, importCollection(data.payments, []));
+    setAll(KEYS.CANCELS, importCollection(data.cancels, []));
+    setStored(KEYS.SETTINGS, importCollection(data.settings, {}));
+  }
+
+  function resetAll({ keepInstallFlag = true } = {}) {
+    const hasInstalled = localStorage.getItem('psy_has_installed');
+    Object.values(KEYS).forEach(key => localStorage.removeItem(key));
+    if (!keepInstallFlag) {
+      localStorage.removeItem('psy_has_installed');
+    } else if (hasInstalled) {
+      localStorage.setItem('psy_has_installed', hasInstalled);
+    }
+    window.Store?.publish('db:reset', {});
+  }
+
   // Seed demo data if no patients exist
   function seedDemoData() {
     if (getPatients().length > 0) return;
-    const demos = [
-      { name: 'Ana Paula Souza', phone: '5511991234567', valuePerSession: 200, dayOfWeek: 1, time: '09:00', notes: 'Ansiedade generalizada' },
-      { name: 'Carlos Eduardo', phone: '5511998765432', valuePerSession: 180, dayOfWeek: 3, time: '14:30', notes: 'Depressão leve' },
-      { name: 'Mariana Costa', phone: '5511987654321', valuePerSession: 220, dayOfWeek: 5, time: '10:00', notes: '' },
-    ];
-    demos.forEach(d => savePatient(d));
+    DEMO_PATIENTS.forEach(demo => savePatient({ ...demo, isDemo: true }));
 
     const month = getCurrentMonth();
     ensureMonthPayments(month);
@@ -307,7 +361,8 @@ const DB = (() => {
     getSettings, saveSettings,
     getCurrentMonth, getWeekStart, getWeekDays, getDayName,
     formatCurrency, formatMonth, prevMonth, nextMonth,
-    getInitials, getDayOfWeekName, seedDemoData, uid,
+    getInitials, getDayOfWeekName, seedDemoData, clearDemoData,
+    exportBackup, importBackup, resetAll, uid,
     AVATAR_COLORS,
   };
 })();

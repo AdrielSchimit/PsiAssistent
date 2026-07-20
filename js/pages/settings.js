@@ -165,12 +165,7 @@ const SettingsPage = (() => {
   }
 
   function exportData() {
-    const data = {
-      patients: localStorage.getItem('psy_patients'),
-      payments: localStorage.getItem('psy_payments'),
-      cancels: localStorage.getItem('psy_cancels'),
-      settings: localStorage.getItem('psy_settings')
-    };
+    const data = DB.exportBackup();
     
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -184,7 +179,7 @@ const SettingsPage = (() => {
   function clearData() {
     if (confirm('ATENÇÃO: Você perderá TODOS os pacientes, agendas e controle financeiro. Deseja mesmo apagar tudo?')) {
       if (confirm('Tem certeza absoluta? Não é possível reverter sem backup.')) {
-        localStorage.clear();
+        DB.resetAll({ keepInstallFlag: false });
         App.toast('App resetado. Recarregando...', 'success');
         setTimeout(() => window.location.reload(), 1500);
       }
@@ -201,10 +196,7 @@ const SettingsPage = (() => {
         reader.onload = (e) => {
           try {
             const data = JSON.parse(e.target.result);
-            if (data.patients) localStorage.setItem('psy_patients', data.patients);
-            if (data.payments) localStorage.setItem('psy_payments', data.payments);
-            if (data.cancels) localStorage.setItem('psy_cancels', data.cancels);
-            if (data.settings) localStorage.setItem('psy_settings', data.settings);
+            DB.importBackup(data);
             
             App.toast('Backup importado! Recarregando...', 'success');
             setTimeout(() => window.location.reload(), 1500);

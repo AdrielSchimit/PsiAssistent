@@ -1,4 +1,4 @@
-const CACHE_NAME = 'psyassist-v2.1';
+const CACHE_NAME = 'psyassist-v2.2';
 const CACHE_ASSETS = [
   './',
   './index.html',

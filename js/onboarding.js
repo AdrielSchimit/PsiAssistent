@@ -236,13 +236,7 @@ const Onboarding = (() => {
   }
 
   function clearDemoData() {
-    // Use DB.deletePatient so Base64 encoding is handled correctly
-    const DEMO_NAMES = ['Ana Paula Souza', 'Carlos Eduardo', 'Mariana Costa'];
-    const patients = DB.getPatients();
-    const demoIds = patients
-      .filter(p => DEMO_NAMES.includes(p.name))
-      .map(p => p.id);
-    demoIds.forEach(id => DB.deletePatient(id));
+    DB.clearDemoData();
   }
 
   const STEPS = [
@@ -297,6 +291,7 @@ const Onboarding = (() => {
 
   function showTutorial(onDone) {
     let step = 0;
+    let finished = false;
 
     const overlay = document.createElement('div');
     overlay.id = 'tutorial-overlay';
@@ -365,6 +360,8 @@ const Onboarding = (() => {
     }
 
     function finishTutorial() {
+      if (finished) return;
+      finished = true;
       overlay.remove();
       // Clear demo data
       clearDemoData();
@@ -385,8 +382,26 @@ const Onboarding = (() => {
   // ─── BOOT ────────────────────────────────────────────────
 
   function boot(onReady) {
-    const tutorialDone = isTutorialDone();
     const pinSet = hasPIN();
+    let readyStarted = false;
+    let flowStarted = false;
+
+    function startReady() {
+      if (readyStarted) return;
+      readyStarted = true;
+      onReady();
+    }
+
+    function runUnlockedFlow() {
+      if (flowStarted) return;
+      flowStarted = true;
+      if (!isTutorialDone()) {
+        DB.seedDemoData();
+        showTutorial(() => startReady());
+      } else {
+        startReady();
+      }
+    }
 
     // Step 1: Show install screen if not installed yet
     // InstallManager listens for 'beforeinstallprompt' — it auto-shows if needed.
@@ -396,17 +411,13 @@ const Onboarding = (() => {
     if (!hasInstalled) {
       // Install screen will show automatically via InstallManager when browser fires event.
       // We patch its hide behavior to trigger tutorial after.
-      const originalHide = InstallManager.hideInstallScreen || (() => {});
-      
+
       // Override: after install screen closes (either via install or dismiss), run tutorial
       const afterInstall = () => {
-        if (!tutorialDone) {
-          DB.seedDemoData();
-          showTutorial(() => onReady());
-        } else if (pinSet) {
-          showPINLock(() => onReady());
+        if (hasPIN()) {
+          showPINLock(runUnlockedFlow);
         } else {
-          onReady();
+          runUnlockedFlow();
         }
       };
 
@@ -437,19 +448,9 @@ const Onboarding = (() => {
     } else {
       // Already installed — check PIN then tutorial
       if (pinSet) {
-        showPINLock(() => {
-          if (!tutorialDone) {
-            DB.seedDemoData();
-            showTutorial(() => onReady());
-          } else {
-            onReady();
-          }
-        });
-      } else if (!tutorialDone) {
-        DB.seedDemoData();
-        showTutorial(() => onReady());
+        showPINLock(runUnlockedFlow);
       } else {
-        onReady();
+        runUnlockedFlow();
       }
     }
   }
