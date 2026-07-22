@@ -289,6 +289,11 @@ const Onboarding = (() => {
     },
   ];
 
+  const voiceStep = STEPS.find(item => item.route === 'book');
+  if (voiceStep) {
+    voiceStep.text = 'Na aba Agendar, voce pode ditar os dados do paciente por voz. O app preenche o formulario automaticamente para voce revisar.';
+  }
+
   function showTutorial(onDone) {
     let step = 0;
     let finished = false;
@@ -302,7 +307,7 @@ const Onboarding = (() => {
 
       overlay.style.cssText = `
         position:fixed; inset:0; z-index:9995;
-        background:rgba(0,0,0,0.6); backdrop-filter:blur(3px);
+        background:transparent; pointer-events:none;
         display:flex; align-items:flex-end; justify-content:center;
         animation: fadeIn 0.3s ease;
       `;
@@ -310,13 +315,16 @@ const Onboarding = (() => {
       overlay.innerHTML = `
         <div style="
           background:var(--card); border-radius:28px 28px 0 0;
-          width:100%; max-width:480px; padding:32px 24px;
+          width:100%; max-width:480px; padding:24px 22px;
+          pointer-events:auto; max-height:46vh; overflow:auto;
+          border:1px solid var(--border); border-bottom:none;
+          box-shadow:0 -16px 44px rgba(15,23,42,0.18);
           animation: slideUp 0.4s var(--transition-spring);
         ">
-          <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 24px"></div>
+          <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px"></div>
 
           <!-- Progress dots -->
-          <div style="display:flex;gap:6px;justify-content:center;margin-bottom:24px">
+          <div style="display:flex;gap:6px;justify-content:center;margin-bottom:18px">
             ${STEPS.map((_, i) => `
               <div style="width:${i===step?20:8}px;height:8px;border-radius:4px;
                 background:${i===step ? 'var(--primary)' : 'var(--border)'};
@@ -325,9 +333,9 @@ const Onboarding = (() => {
           </div>
 
           <div style="text-align:center;padding:0 8px">
-            <div style="font-size:52px;margin-bottom:16px;line-height:1">${s.icon}</div>
+            <div style="font-size:38px;margin-bottom:10px;line-height:1">${s.icon}</div>
             <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:12px">${s.title}</div>
-            <div style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:28px">${s.text}</div>
+            <div style="font-size:14px;color:var(--text-muted);line-height:1.55;margin-bottom:22px">${s.text}</div>
           </div>
 
           <button id="tut-next" style="

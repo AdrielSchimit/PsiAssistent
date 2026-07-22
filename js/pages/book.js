@@ -1,4 +1,4 @@
-// PsyAssist — Book Page (Add/Edit Patient)
+// PsyAssist - Book Page (Add/Edit Patient)
 
 const BookPage = (() => {
   let editPatientId = null;
@@ -22,48 +22,42 @@ const BookPage = (() => {
         <div class="page-header">
           <h1 class="page-header__title">${isEdit ? 'Editar <span>Paciente</span>' : 'Novo <span>Paciente</span>'}</h1>
         </div>
-        
+
         ${!isEdit ? `
         <div class="card mb-4 text-center card--elevated" style="padding:var(--sp-5); border: 1px dashed var(--primary)">
           <h3 style="font-size:16px; margin-bottom:4px">Assistente Inteligente</h3>
-          <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px">Dite os dados do paciente ou tire uma foto do seu caderninho.</p>
-          <div style="display:flex; gap:12px; justify-content:center">
-            <button id="btn-voice" type="button" class="btn btn-primary" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px">
-              🎤 Ditar
-            </button>
-            <button id="btn-camera" type="button" class="btn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--primary); color:var(--primary); background:transparent">
-              📷 Foto
-            </button>
-          </div>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px">Dite os dados do paciente e revise os campos antes de salvar.</p>
+          <button id="btn-voice" type="button" class="btn btn-primary" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px">
+            Ditar
+          </button>
         </div>
-        
+
         <div style="text-align:center; margin-bottom:var(--sp-4); font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; font-weight:600">Ou preencha manualmente</div>
         ` : ''}
 
         <form id="form-patient" class="card">
-          
           <div class="form-group">
             <label class="form-label">Nome Completo</label>
             <div style="display:flex; gap:8px">
-              <input type="text" id="p-name" class="form-input" value="${patient.name}" required placeholder="Ex: João Silva" style="flex:1">
-              <button type="button" class="mic-field-btn" data-target="p-name" title="Ditar nome" style="width:48px; height:48px; flex-shrink:0; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:18px;">🎤</button>
+              <input type="text" id="p-name" class="form-input" value="${patient.name}" required placeholder="Ex: Joao Silva" style="flex:1">
+              <button type="button" class="mic-field-btn" data-target="p-name" title="Ditar nome" style="width:48px; height:48px; flex-shrink:0; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:18px;">Mic</button>
             </div>
           </div>
-          
+
           <div class="form-group">
-            <label class="form-label">WhatsApp (DDD + Número)</label>
+            <label class="form-label">WhatsApp (DDD + Numero)</label>
             <div style="display:flex; align-items:center; gap:8px">
               <div style="background:var(--surface); padding:0 12px; height:48px; border-radius:var(--r-md); border:1px solid var(--border); display:flex; align-items:center; font-weight:500; color:var(--text-secondary); flex-shrink:0">+55</div>
               <input type="tel" id="p-phone" class="form-input" value="${displayPhone}" placeholder="Ex: 11999999999" style="flex:1">
             </div>
           </div>
-          
+
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Valor (R$)</label>
               <div style="display:flex; gap:8px">
                 <input type="number" id="p-value" class="form-input" value="${patient.valuePerSession}" required placeholder="Ex: 150" style="flex:1">
-                <button type="button" class="mic-field-btn" data-target="p-value" title="Ditar valor" style="width:48px; height:48px; flex-shrink:0; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:18px;">🎤</button>
+                <button type="button" class="mic-field-btn" data-target="p-value" title="Ditar valor" style="width:48px; height:48px; flex-shrink:0; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:18px;">Mic</button>
               </div>
             </div>
           </div>
@@ -73,29 +67,29 @@ const BookPage = (() => {
               <label class="form-label">Dia da Semana</label>
               <select id="p-day" class="form-input form-input--select">
                 <option value="1" ${patient.dayOfWeek == 1 ? 'selected' : ''}>Segunda</option>
-                <option value="2" ${patient.dayOfWeek == 2 ? 'selected' : ''}>Terça</option>
+                <option value="2" ${patient.dayOfWeek == 2 ? 'selected' : ''}>Terca</option>
                 <option value="3" ${patient.dayOfWeek == 3 ? 'selected' : ''}>Quarta</option>
                 <option value="4" ${patient.dayOfWeek == 4 ? 'selected' : ''}>Quinta</option>
                 <option value="5" ${patient.dayOfWeek == 5 ? 'selected' : ''}>Sexta</option>
-                <option value="6" ${patient.dayOfWeek == 6 ? 'selected' : ''}>Sábado</option>
+                <option value="6" ${patient.dayOfWeek == 6 ? 'selected' : ''}>Sabado</option>
                 <option value="0" ${patient.dayOfWeek == 0 ? 'selected' : ''}>Domingo</option>
               </select>
             </div>
-            
+
             <div class="form-group">
-              <label class="form-label">Horário</label>
+              <label class="form-label">Horario</label>
               <input type="time" id="p-time" class="form-input" value="${patient.time}" required>
             </div>
           </div>
-          
+
           <div class="form-group">
-            <label class="form-label">Anotações / Observações</label>
+            <label class="form-label">Anotacoes / Observacoes</label>
             <div style="position:relative">
               <textarea id="p-notes" class="form-input" rows="3" placeholder="Opcional">${patient.notes}</textarea>
-              <button type="button" class="mic-field-btn" data-target="p-notes" title="Ditar observação" style="position:absolute; bottom:8px; right:8px; width:36px; height:36px; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:16px;">🎤</button>
+              <button type="button" class="mic-field-btn" data-target="p-notes" title="Ditar observacao" style="position:absolute; bottom:8px; right:8px; width:36px; height:36px; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:12px;">Mic</button>
             </div>
           </div>
-          
+
           ${isEdit ? `
           <div class="form-group">
             <label class="toggle-wrap">
@@ -109,9 +103,9 @@ const BookPage = (() => {
           ` : ''}
 
           <div class="mt-4">
-            <button type="submit" class="btn btn-primary btn-full">${isEdit ? 'Salvar Alterações' : 'Cadastrar Paciente'}</button>
+            <button type="submit" class="btn btn-primary btn-full">${isEdit ? 'Salvar Alteracoes' : 'Cadastrar Paciente'}</button>
           </div>
-          
+
           ${isEdit ? `
           <div class="mt-3">
             <button type="button" id="btn-delete" class="btn btn-danger btn-full" style="background:transparent; border-color:transparent;">Excluir Paciente</button>
@@ -122,21 +116,11 @@ const BookPage = (() => {
     `;
   }
 
-  function fillFormFromOCR(data) {
-    if (data.name) document.getElementById('p-name').value = data.name;
-    if (data.phone) document.getElementById('p-phone').value = data.phone;
-    if (data.valuePerSession) document.getElementById('p-value').value = data.valuePerSession;
-    if (data.time) document.getElementById('p-time').value = data.time;
-    if (data.notes) document.getElementById('p-notes').value = data.notes;
-    
-    App.toast('Dados pré-preenchidos. Por favor, revise!', 'success');
-  }
-
   function onEnter() {
     const form = document.getElementById('form-patient');
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      
+
       const data = {
         name: document.getElementById('p-name').value,
         phone: document.getElementById('p-phone').value,
@@ -150,46 +134,35 @@ const BookPage = (() => {
         data.id = editPatientId;
         data.active = document.getElementById('p-active').checked;
       }
-      
+
       DB.savePatient(data);
-      
       App.toast(editPatientId ? 'Paciente atualizado!' : 'Paciente cadastrado!', 'success');
-      
-      // Reset state and nav to patients
       setEditId(null);
       Router.navigate('patients');
     });
 
-    const btnCamera = document.getElementById('btn-camera');
-    if (btnCamera) {
-      btnCamera.addEventListener('click', () => {
-        window.OCR.openCamera((text) => {
-          const parsed = window.OCR.parseTextToPatient(text);
-          fillFormFromOCR(parsed);
-        });
-      });
-    }
-
-    // === Per-field mic buttons (#1) ===
     function startVoiceForField(targetId, btn) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         App.toast('Navegador sem suporte a voz.', 'error');
         return;
       }
+
       const recognition = new SpeechRecognition();
       recognition.lang = 'pt-BR';
       recognition.interimResults = false;
       const originalText = btn.textContent;
-      btn.textContent = '🔴';
+      btn.textContent = '...';
       btn.disabled = true;
       recognition.start();
+
       recognition.onresult = (event) => {
         const text = event.results[0][0].transcript;
         const el = document.getElementById(targetId);
         if (!el) return;
+
         if (el.tagName === 'TEXTAREA') {
-          el.value = el.value ? el.value + ' ' + text : text;
+          el.value = el.value ? `${el.value} ${text}` : text;
         } else if (el.type === 'number') {
           const num = text.replace(/[^\d]/g, '');
           if (num) el.value = num;
@@ -198,32 +171,40 @@ const BookPage = (() => {
         }
         App.toast('Campo preenchido!', 'success');
       };
-      recognition.onend = () => { btn.textContent = originalText; btn.disabled = false; };
-      recognition.onerror = (e) => { App.toast('Erro: ' + e.error, 'error'); btn.disabled = false; btn.textContent = originalText; };
+
+      recognition.onend = () => {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      };
+
+      recognition.onerror = (e) => {
+        App.toast(`Erro: ${e.error}`, 'error');
+        btn.disabled = false;
+        btn.textContent = originalText;
+      };
     }
 
     document.querySelectorAll('.mic-field-btn').forEach(btn => {
       btn.addEventListener('click', () => startVoiceForField(btn.getAttribute('data-target'), btn));
     });
 
-    // === Main voice button (all fields at once) ===
     const btnVoice = document.getElementById('btn-voice');
     if (btnVoice) {
       btnVoice.addEventListener('click', () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-          App.toast('Seu navegador não suporta reconhecimento de voz.', 'error');
+          App.toast('Seu navegador nao suporta reconhecimento de voz.', 'error');
           return;
         }
+
         const recognition = new SpeechRecognition();
         recognition.lang = 'pt-BR';
         recognition.interimResults = false;
-        btnVoice.innerHTML = '🎙️ Escutando...';
+        btnVoice.innerHTML = 'Escutando...';
         btnVoice.style.background = 'var(--primary-dark)';
         btnVoice.style.color = 'white';
-        
         recognition.start();
-        
+
         recognition.onresult = (event) => {
           const transcript = event.results[0][0].transcript;
           const parsed = VoiceParser.parse(transcript);
@@ -232,16 +213,16 @@ const BookPage = (() => {
           if (parsed.valuePerSession !== null) document.getElementById('p-value').value = parsed.valuePerSession;
           if (parsed.time) document.getElementById('p-time').value = parsed.time;
           if (parsed.dayOfWeek !== null) document.getElementById('p-day').value = parsed.dayOfWeek;
-          App.toast('Preenchido por Voz! Confira os campos.', 'success');
+          App.toast('Preenchido por voz. Confira os campos.', 'success');
         };
-        
+
         recognition.onend = () => {
-          btnVoice.innerHTML = '🎤 Ditar';
+          btnVoice.innerHTML = 'Ditar';
           btnVoice.style.background = '';
         };
-        
+
         recognition.onerror = (e) => {
-          App.toast('Erro no microfone: ' + e.error, 'error');
+          App.toast(`Erro no microfone: ${e.error}`, 'error');
         };
       });
     }
@@ -249,9 +230,9 @@ const BookPage = (() => {
     const btnDel = document.getElementById('btn-delete');
     if (btnDel) {
       btnDel.addEventListener('click', () => {
-        if (confirm('Tem certeza que deseja excluir este paciente e todo o seu histórico financeiro?')) {
+        if (confirm('Tem certeza que deseja excluir este paciente e todo o seu historico financeiro?')) {
           DB.deletePatient(editPatientId);
-          App.toast('Paciente excluído', 'success');
+          App.toast('Paciente excluido', 'success');
           setEditId(null);
           Router.navigate('patients');
         }

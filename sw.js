@@ -1,4 +1,4 @@
-const CACHE_NAME = 'psyassist-v2.2';
+const CACHE_NAME = 'psyassist-v2.3';
 const CACHE_ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,6 @@ const CACHE_ASSETS = [
   './js/db.js',
   './js/router.js',
   './js/install.js',
-  './js/camera.js',
   './js/voice-parser.js',
   './js/whatsapp.js',
   './js/pages/home.js',
