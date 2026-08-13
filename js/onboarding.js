@@ -1,4 +1,4 @@
-// PsyAssist — Onboarding, Tutorial e PIN Lock
+// PsyAssist — Onboarding, Non-Obstructive Floating Tutorial e PIN Lock
 
 const Onboarding = (() => {
 
@@ -9,7 +9,6 @@ const Onboarding = (() => {
   }
 
   function hashPIN(pin) {
-    // Simple hash (not cryptographic, just obfuscation for localStorage)
     let hash = 0;
     for (let i = 0; i < pin.length; i++) {
       hash = ((hash << 5) - hash) + pin.charCodeAt(i);
@@ -43,9 +42,9 @@ const Onboarding = (() => {
 
     overlay.innerHTML = `
       <div style="text-align:center; width:100%; max-width:320px;">
-        <div style="font-size:48px; margin-bottom:16px">🔐</div>
-        <div style="font-size:22px; font-weight:800; color:var(--text); margin-bottom:6px">PsyAssist</div>
-        <div style="font-size:14px; color:var(--text-muted); margin-bottom:40px">Digite o seu PIN para continuar</div>
+        <div style="font-size:44px; margin-bottom:12px">🔐</div>
+        <div style="font-size:22px; font-weight:800; color:var(--text); margin-bottom:4px">PsyAssist</div>
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:32px">Digite seu PIN de 4 dígitos para acessar</div>
 
         <div id="pin-display" style="display:flex; gap:12px; justify-content:center; margin-bottom:32px">
           <div class="pin-dot" style="width:14px; height:14px; border-radius:50%; border:2px solid var(--border); background:transparent; transition:all 0.2s"></div>
@@ -57,14 +56,14 @@ const Onboarding = (() => {
         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:260px; margin:0 auto;">
           ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k => `
             <button data-key="${k}" style="
-              height:64px; border-radius:16px; border:1px solid var(--border);
-              background:var(--card); font-size:22px; font-weight:600; color:var(--text);
+              height:60px; border-radius:16px; border:1px solid var(--border);
+              background:var(--card); font-size:22px; font-weight:700; color:var(--text);
               cursor:pointer; transition:all 0.15s; ${k==='' ? 'visibility:hidden' : ''}
               box-shadow:0 2px 8px rgba(0,0,0,0.06);
             ">${k}</button>
           `).join('')}
         </div>
-        <div id="pin-error" style="color:#F43F5E; font-size:13px; margin-top:16px; min-height:20px;"></div>
+        <div id="pin-error" style="color:#F43F5E; font-size:13px; margin-top:16px; min-height:20px; font-weight:600;"></div>
       </div>
     `;
 
@@ -98,17 +97,16 @@ const Onboarding = (() => {
         entered += key;
         updateDots();
 
-        // Add press effect
         btn.style.background = 'var(--primary-subtle)';
-        btn.style.transform = 'scale(0.93)';
+        btn.style.transform = 'scale(0.94)';
         setTimeout(() => { btn.style.background = ''; btn.style.transform = ''; }, 120);
 
         if (entered.length === 4) {
           setTimeout(() => {
             if (checkPIN(entered)) {
               overlay.style.opacity = '0';
-              overlay.style.transition = 'opacity 0.3s';
-              setTimeout(() => overlay.remove(), 300);
+              overlay.style.transition = 'opacity 0.25s';
+              setTimeout(() => overlay.remove(), 250);
               onSuccess();
             } else {
               overlay.querySelector('#pin-error').textContent = 'PIN incorreto. Tente novamente.';
@@ -116,9 +114,9 @@ const Onboarding = (() => {
                 d.style.background = '#F43F5E';
                 d.style.borderColor = '#F43F5E';
               });
-              setTimeout(() => { entered = ''; updateDots(); }, 700);
+              setTimeout(() => { entered = ''; updateDots(); }, 650);
             }
-          }, 200);
+          }, 180);
         }
       });
     });
@@ -129,28 +127,28 @@ const Onboarding = (() => {
     overlay.id = 'pin-setup-overlay';
     overlay.style.cssText = `
       position:fixed; inset:0; z-index:9997;
-      background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);
+      background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
       display:flex; align-items:flex-end; justify-content:center;
     `;
 
     overlay.innerHTML = `
-      <div style="background:var(--card); border-radius:24px 24px 0 0; padding:32px; width:100%; max-width:480px; text-align:center;">
-        <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 24px"></div>
-        <div style="font-size:32px; margin-bottom:12px">🔐</div>
-        <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">Criar PIN de Segurança</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:28px">Opcional — protege seu app de olhares curiosos</div>
+      <div style="background:var(--card); border-radius:24px 24px 0 0; padding:28px 24px; width:100%; max-width:440px; text-align:center; box-shadow:0 -10px 40px rgba(0,0,0,0.2); animation:slideUp 0.3s var(--transition-spring);">
+        <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px"></div>
+        <div style="font-size:32px; margin-bottom:8px">🔐</div>
+        <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px">Proteger com PIN</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:20px">Opcional — garante sigilo aos prontuários dos seus pacientes</div>
 
-        <div id="setup-display" style="display:flex;gap:12px;justify-content:center;margin-bottom:24px">
+        <div id="setup-display" style="display:flex;gap:12px;justify-content:center;margin-bottom:18px">
           ${[0,1,2,3].map(() => `<div class="setup-dot" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all 0.2s"></div>`).join('')}
         </div>
 
-        <div id="setup-step" style="font-size:12px;color:var(--text-muted);margin-bottom:20px">Digite um PIN de 4 dígitos</div>
+        <div id="setup-step" style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:16px">Digite uma senha de 4 dígitos</div>
 
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto 16px;">
           ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k => `
             <button data-setup-key="${k}" style="
-              height:56px; border-radius:14px; border:1px solid var(--border);
-              background:var(--surface); font-size:20px; font-weight:600; color:var(--text);
+              height:52px; border-radius:14px; border:1px solid var(--border);
+              background:var(--surface); font-size:20px; font-weight:700; color:var(--text);
               cursor:pointer; transition:all 0.15s; ${k==='' ? 'visibility:hidden' : ''}
             ">${k}</button>
           `).join('')}
@@ -158,8 +156,8 @@ const Onboarding = (() => {
 
         <button id="skip-pin" style="
           width:100%; background:transparent; border:none; color:var(--text-muted);
-          font-size:13px; padding:12px; cursor:pointer; margin-top:4px;
-        ">Pular — não quero PIN agora</button>
+          font-size:13px; padding:10px; cursor:pointer; font-weight:600;
+        ">Pular por enquanto</button>
       </div>
     `;
 
@@ -167,7 +165,7 @@ const Onboarding = (() => {
 
     let first = '';
     let second = '';
-    let phase = 1; // 1=enter, 2=confirm
+    let phase = 1;
     const dots = overlay.querySelectorAll('.setup-dot');
     const stepLabel = overlay.querySelector('#setup-step');
 
@@ -197,9 +195,9 @@ const Onboarding = (() => {
             setTimeout(() => {
               phase = 2;
               second = '';
-              stepLabel.textContent = 'Confirme o PIN';
+              stepLabel.textContent = 'Confirme o mesmo PIN';
               updateDots('');
-            }, 300);
+            }, 250);
           }
         } else {
           if (second.length >= 4) return;
@@ -210,12 +208,12 @@ const Onboarding = (() => {
               if (first === second) {
                 setPIN(first);
                 overlay.remove();
-                App.toast('PIN criado com sucesso! 🔐', 'success');
-                onDone();
+                App.toast('PIN ativado com sucesso! 🔐', 'success');
+                if (onDone) onDone();
               } else {
-                stepLabel.textContent = '❌ PINs diferentes. Tente de novo.';
+                stepLabel.textContent = '❌ PINs não coincidem. Tente de novo.';
                 dots.forEach(d => { d.style.background = '#F43F5E'; d.style.borderColor = '#F43F5E'; });
-                setTimeout(() => { phase = 1; first = ''; second = ''; stepLabel.textContent = 'Digite um PIN de 4 dígitos'; updateDots(''); }, 800);
+                setTimeout(() => { phase = 1; first = ''; second = ''; stepLabel.textContent = 'Digite uma senha de 4 dígitos'; updateDots(''); }, 750);
               }
             }, 200);
           }
@@ -223,136 +221,136 @@ const Onboarding = (() => {
       });
     });
 
-    overlay.querySelector('#skip-pin').addEventListener('click', () => {
+    overlay.querySelector('#skip-pin')?.addEventListener('click', () => {
       overlay.remove();
-      onDone();
+      if (onDone) onDone();
     });
   }
 
-  // ─── TUTORIAL ────────────────────────────────────────────
+  // ─── COMPACT NON-OBSTRUCTIVE TUTORIAL ────────────────────
 
   function isTutorialDone() {
     return !!DB.getSettings().tutorialDone;
   }
 
-  function clearDemoData() {
-    DB.clearDemoData();
-  }
-
   const STEPS = [
     {
       icon: '👋',
-      title: 'Bem-vindo ao PsyAssist!',
-      text: 'Seu assistente inteligente para psicólogos. Vamos fazer um tour rápido pelas funcionalidades principais.',
-      highlight: null,
-      action: 'Vamos lá!',
+      title: 'Bem-vinda ao PsyAssist!',
+      text: 'Este é um tour rápido. Veja a tela real funcionando enquanto navega.',
+      route: 'home',
+      action: 'Começar ➜',
     },
     {
       icon: '👥',
-      title: 'Seus Pacientes',
-      text: 'Cadastramos 3 pacientes de exemplo para você explorar. Toque em qualquer um para ver o perfil completo, enviar mensagens no WhatsApp e muito mais!',
-      highlight: null,
-      action: 'Entendi!',
+      title: 'Aba Pacientes',
+      text: 'Veja os pacientes de exemplo abaixo. Toque em qualquer um para abrir prontuário, WhatsApp e recibos.',
       route: 'patients',
+      action: 'Próximo ➜',
     },
     {
       icon: '🗓️',
       title: 'Agenda Semanal',
-      text: 'Na aba Agenda você vê todas as sessões da semana. Deslize os dias e marque presenças ou faltas com um toque.',
-      highlight: null,
-      action: 'Próximo',
+      text: 'Visualize as consultas da semana organizadas por dia e cancele faltas com 1 toque.',
       route: 'schedule',
+      action: 'Próximo ➜',
     },
     {
       icon: '💰',
-      title: 'Controle Financeiro',
-      text: 'O Painel Financeiro mostra quem pagou e quem está devendo no mês. Toque no status para marcar como pago, ou no WhatsApp para cobrar diretamente!',
-      highlight: null,
-      action: 'Próximo',
+      title: 'Painel Financeiro',
+      text: 'Controle quem já pagou o mês e envie lembretes educados de cobrança no WhatsApp.',
       route: 'finance',
+      action: 'Próximo ➜',
     },
     {
       icon: '🎤',
-      title: 'Cadastro por Voz!',
-      text: 'Na aba Agendar, você pode ditar os dados do paciente por voz ou tirar uma foto do caderninho. O app preenche o formulário automaticamente!',
-      highlight: null,
-      action: 'Próximo',
+      title: 'Cadastro & Voz',
+      text: 'Cadastre pacientes novos manualmente ou dite tudo por voz com o microfone inteligente.',
       route: 'book',
+      action: 'Próximo ➜',
     },
     {
       icon: '🎉',
       title: 'Tudo Pronto!',
-      text: 'Agora os pacientes de exemplo serão removidos e o seu app começa limpo, do zero, só com os seus dados reais.',
-      highlight: null,
-      action: '🚀 Começar a Usar!',
+      text: 'Os exemplos serão limpos e o app ficará pronto para os seus pacientes reais.',
+      route: 'home',
+      action: '🚀 Concluir Tour',
       last: true,
     },
   ];
-
-  const voiceStep = STEPS.find(item => item.route === 'book');
-  if (voiceStep) {
-    voiceStep.text = 'Na aba Agendar, voce pode ditar os dados do paciente por voz. O app preenche o formulario automaticamente para voce revisar.';
-  }
 
   function showTutorial(onDone) {
     let step = 0;
     let finished = false;
 
-    const overlay = document.createElement('div');
-    overlay.id = 'tutorial-overlay';
+    let overlay = document.getElementById('tutorial-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'tutorial-overlay';
+      document.body.appendChild(overlay);
+    }
 
     function renderStep() {
       const s = STEPS[step];
       if (s.route) Router.navigate(s.route, false);
 
       overlay.style.cssText = `
-        position:fixed; inset:0; z-index:9995;
-        background:transparent; pointer-events:none;
-        display:flex; align-items:flex-end; justify-content:center;
-        animation: fadeIn 0.3s ease;
+        position: fixed;
+        top: calc(var(--header-height) + var(--safe-top) + 8px);
+        left: 12px;
+        right: 12px;
+        z-index: 8500;
+        pointer-events: none;
+        display: flex;
+        justify-content: center;
+        animation: fadeIn 0.25s ease;
       `;
 
       overlay.innerHTML = `
         <div style="
-          background:var(--card); border-radius:28px 28px 0 0;
-          width:100%; max-width:480px; padding:24px 22px;
-          pointer-events:auto; max-height:46vh; overflow:auto;
-          border:1px solid var(--border); border-bottom:none;
-          box-shadow:0 -16px 44px rgba(15,23,42,0.18);
-          animation: slideUp 0.4s var(--transition-spring);
+          background: var(--card);
+          border: 1.5px solid var(--primary);
+          border-radius: 18px;
+          padding: 14px 16px;
+          width: 100%;
+          max-width: 420px;
+          pointer-events: auto;
+          box-shadow: 0 10px 30px rgba(79, 70, 229, 0.22), 0 2px 8px rgba(0,0,0,0.1);
+          animation: slideDown 0.3s var(--transition-spring);
         ">
-          <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px"></div>
-
-          <!-- Progress dots -->
-          <div style="display:flex;gap:6px;justify-content:center;margin-bottom:18px">
-            ${STEPS.map((_, i) => `
-              <div style="width:${i===step?20:8}px;height:8px;border-radius:4px;
-                background:${i===step ? 'var(--primary)' : 'var(--border)'};
-                transition:all 0.3s"></div>
-            `).join('')}
+          <!-- Step indicator & Close -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:18px;">${s.icon}</span>
+              <strong style="font-size:14px; color:var(--text);">${s.title}</strong>
+            </div>
+            <span style="font-size:11px; font-weight:700; color:var(--primary); background:var(--primary-subtle); padding:2px 8px; border-radius:10px;">
+              ${step + 1} de ${STEPS.length}
+            </span>
           </div>
 
-          <div style="text-align:center;padding:0 8px">
-            <div style="font-size:38px;margin-bottom:10px;line-height:1">${s.icon}</div>
-            <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:12px">${s.title}</div>
-            <div style="font-size:14px;color:var(--text-muted);line-height:1.55;margin-bottom:22px">${s.text}</div>
+          <!-- Description text -->
+          <div style="font-size:12px; color:var(--text-secondary); line-height:1.45; margin-bottom:12px;">
+            ${s.text}
           </div>
 
-          <button id="tut-next" style="
-            width:100%; background:linear-gradient(135deg,var(--primary),var(--primary-light));
-            color:white; border:none; border-radius:var(--r-md); padding:16px;
-            font-size:15px; font-weight:700; cursor:pointer;
-            box-shadow:0 4px 12px var(--primary-glow);
-          ">${s.action}</button>
-
-          ${step > 0 ? `<button id="tut-skip" style="
-            width:100%; background:transparent; border:none; color:var(--text-muted);
-            font-size:13px; padding:12px; cursor:pointer; margin-top:4px;
-          ">Pular tutorial</button>` : `<div style="height:16px"></div>`}
+          <!-- Actions -->
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <button id="tut-skip" style="font-size:11px; color:var(--text-muted); background:none; border:none; cursor:pointer; padding:6px 4px; font-weight:600;">
+              Pular tour
+            </button>
+            <button id="tut-next" style="
+              background: var(--primary); color: white; border: none; border-radius: 10px;
+              padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer;
+              box-shadow: 0 2px 8px var(--primary-glow);
+            ">
+              ${s.action}
+            </button>
+          </div>
         </div>
       `;
 
-      overlay.querySelector('#tut-next').addEventListener('click', () => {
+      overlay.querySelector('#tut-next')?.addEventListener('click', () => {
         if (s.last) {
           finishTutorial();
         } else {
@@ -361,109 +359,57 @@ const Onboarding = (() => {
         }
       });
 
-      const skipBtn = overlay.querySelector('#tut-skip');
-      if (skipBtn) {
-        skipBtn.addEventListener('click', () => finishTutorial());
-      }
+      overlay.querySelector('#tut-skip')?.addEventListener('click', () => {
+        finishTutorial();
+      });
     }
 
     function finishTutorial() {
       if (finished) return;
       finished = true;
       overlay.remove();
-      // Clear demo data
-      clearDemoData();
-      // Mark done
+      DB.clearDemoData();
       DB.saveSettings({ tutorialDone: true });
-      // Navigate home fresh
       Router.navigate('home', false);
-      App.toast('App pronto! Bem-vindo ao PsyAssist 🎉', 'success');
-      // After tutorial, offer PIN setup
-      setTimeout(() => showPINSetup(() => {}), 800);
-      onDone();
+      App.toast('Tour finalizado! Bem-vinda ao PsyAssist 🎉', 'success');
+      setTimeout(() => showPINSetup(() => {}), 600);
+      if (onDone) onDone();
     }
 
-    document.body.appendChild(overlay);
     renderStep();
   }
 
-  // ─── BOOT ────────────────────────────────────────────────
+  // ─── BOOT SEQUENCE ───────────────────────────────────────
 
   function boot(onReady) {
-    const pinSet = hasPIN();
-    let readyStarted = false;
-    let flowStarted = false;
-
-    function startReady() {
-      if (readyStarted) return;
-      readyStarted = true;
-      onReady();
-    }
-
     function runUnlockedFlow() {
-      if (flowStarted) return;
-      flowStarted = true;
       if (!isTutorialDone()) {
         DB.seedDemoData();
-        showTutorial(() => startReady());
+        showTutorial(() => onReady());
       } else {
-        startReady();
+        onReady();
       }
     }
 
-    // Step 1: Show install screen if not installed yet
-    // InstallManager listens for 'beforeinstallprompt' — it auto-shows if needed.
-    // We hook into the dismiss/install buttons to then proceed with the rest of the boot.
-    const hasInstalled = localStorage.getItem('psy_has_installed') === 'true';
-
-    if (!hasInstalled) {
-      // Install screen will show automatically via InstallManager when browser fires event.
-      // We patch its hide behavior to trigger tutorial after.
-
-      // Override: after install screen closes (either via install or dismiss), run tutorial
-      const afterInstall = () => {
-        if (hasPIN()) {
-          showPINLock(runUnlockedFlow);
-        } else {
-          runUnlockedFlow();
-        }
-      };
-
-      // Patch the dismiss and install buttons once they exist in the DOM
-      // We use a small observer since the install screen may not exist yet
-      const observer = new MutationObserver(() => {
-        const dismissBtn = document.getElementById('btn-dismiss-install');
-        const installBtn = document.getElementById('btn-install-app');
-        if (dismissBtn) {
-          // Add our hook after the existing listener
-          dismissBtn.addEventListener('click', () => setTimeout(afterInstall, 350));
-          observer.disconnect();
-        }
-        if (installBtn) {
-          installBtn.addEventListener('click', () => setTimeout(afterInstall, 1000));
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-
-      // Fallback: if 'beforeinstallprompt' never fires (iOS, already installed),
-      // browser won't show install screen — proceed directly.
-      setTimeout(() => {
-        if (!document.getElementById('install-screen')) {
-          afterInstall();
-        }
-      }, 600);
-
-    } else {
-      // Already installed — check PIN then tutorial
-      if (pinSet) {
+    function proceed() {
+      if (hasPIN()) {
         showPINLock(runUnlockedFlow);
       } else {
         runUnlockedFlow();
       }
     }
+
+    // Step 1: Always check install prompt first on initial load
+    if (!InstallManager.isInstalledOrDismissed()) {
+      InstallManager.showInstallPrompt(() => {
+        proceed();
+      });
+    } else {
+      proceed();
+    }
   }
 
-  return { boot, hasPIN, setPIN, checkPIN, removePIN, showPINSetup, showPINLock };
+  return { boot, hasPIN, setPIN, checkPIN, removePIN, showPINSetup, showPINLock, showTutorial };
 })();
 
 window.Onboarding = Onboarding;
