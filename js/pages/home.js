@@ -184,7 +184,17 @@ const HomePage = (() => {
       clearInterval(focusInterval);
       overlay.style.display = 'none';
       const m = Math.floor(focusSeconds / 60);
-      App.toast(`Sessão encerrada! Duração: ${m} min`, 'success');
+      App.toast(`Sessão encerrada (${m} min)! ✨`, 'success');
+
+      const patients = DB.getActivePatients();
+      const todayNum = new Date().getDay();
+      const todayPatient = patients.find(p => parseInt(p.dayOfWeek) === todayNum);
+      if (todayPatient && window.PatientsPage) {
+        setTimeout(() => {
+          window.PatientsPage.openModal(todayPatient.id);
+          window.PatientsPage.setModalTab('evolutions');
+        }, 400);
+      }
     }
   }
 

@@ -48,21 +48,21 @@ const InstallManager = (() => {
               <div class="install-feature__icon">⚡️</div>
               <div class="install-feature__text">
                 Rápido e Fluido
-                <small>Não depende do navegador</small>
+                <small>Acesso instantâneo como app nativo</small>
               </div>
             </div>
             <div class="install-feature">
-              <div class="install-feature__icon">📶</div>
+              <div class="install-feature__icon">🔒</div>
               <div class="install-feature__text">
-                100% Offline
-                <small>Seus dados salvos no dispositivo</small>
+                Sigilo e Segurança
+                <small>Dados salvos no seu aparelho com PIN</small>
               </div>
             </div>
             <div class="install-feature">
-              <div class="install-feature__icon">📸</div>
+              <div class="install-feature__icon">🎤</div>
               <div class="install-feature__text">
-                Acesso à Câmera
-                <small>Para leitura inteligente de caderninho</small>
+                Cadastro por Voz
+                <small>Dite informações sem precisar digitar</small>
               </div>
             </div>
           </div>

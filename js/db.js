@@ -5,19 +5,21 @@ const DB = (() => {
     PATIENTS: 'psy_patients',
     PAYMENTS: 'psy_payments',
     CANCELS: 'psy_cancels',
+    EVOLUTIONS: 'psy_evolutions',
     SETTINGS: 'psy_settings',
   };
 
   const STORAGE_PREFIX = 'psy:b64:v1:';
   const DEMO_PATIENTS = [
-    { name: 'Ana Paula Souza', phone: '5511991234567', valuePerSession: 200, dayOfWeek: 1, time: '09:00', notes: 'Ansiedade generalizada' },
-    { name: 'Carlos Eduardo', phone: '5511998765432', valuePerSession: 180, dayOfWeek: 3, time: '14:30', notes: 'Depressao leve' },
-    { name: 'Mariana Costa', phone: '5511987654321', valuePerSession: 220, dayOfWeek: 5, time: '10:00', notes: '' },
+    { name: 'Ana Paula Souza', phone: '5511991234567', valuePerSession: 200, dayOfWeek: 1, time: '09:00', notes: 'Ansiedade generalizada', modality: 'online' },
+    { name: 'Carlos Eduardo', phone: '5511998765432', valuePerSession: 180, dayOfWeek: 3, time: '14:30', notes: 'Depressao leve', modality: 'presencial' },
+    { name: 'Mariana Costa', phone: '5511987654321', valuePerSession: 220, dayOfWeek: 5, time: '10:00', notes: '', modality: 'online' },
   ];
   const KEY_EVENTS = {
     [KEYS.PATIENTS]: 'db:patients',
     [KEYS.PAYMENTS]: 'db:payments',
     [KEYS.CANCELS]: 'db:cancels',
+    [KEYS.EVOLUTIONS]: 'db:evolutions',
     [KEYS.SETTINGS]: 'db:settings',
   };
 
@@ -108,13 +110,60 @@ const DB = (() => {
   function deletePatient(id) {
     const patients = getPatients().filter(p => p.id !== id);
     setAll(KEYS.PATIENTS, patients);
-    // Also clean up payments and cancels for this patient
+    // Also clean up payments, cancels, and evolutions for this patient
     setAll(KEYS.PAYMENTS, getPayments().filter(p => p.patientId !== id));
     setAll(KEYS.CANCELS, getCancels().filter(c => c.patientId !== id));
+    setAll(KEYS.EVOLUTIONS, getEvolutions().filter(e => e.patientId !== id));
   }
 
   function getActivePatients() {
     return getPatients().filter(p => p.active);
+  }
+
+  // ─── EVOLUTIONS (Prontuário de Sessões) ───────────────────
+  /**
+   * Evolution schema:
+   * { id, patientId, date ("YYYY-MM-DD"), time ("HH:MM"), text, title, createdAt, updatedAt }
+   */
+  function getEvolutions(patientId = null) {
+    const all = getAll(KEYS.EVOLUTIONS);
+    if (!patientId) return all;
+    return all.filter(e => e.patientId === patientId).sort((a, b) => {
+      const dateA = `${a.date || ''} ${a.time || ''}`;
+      const dateB = `${b.date || ''} ${b.time || ''}`;
+      return dateB.localeCompare(dateA);
+    });
+  }
+
+  function saveEvolution(data) {
+    const all = getAll(KEYS.EVOLUTIONS);
+    const now = new Date();
+    const defaultDate = now.toISOString().slice(0, 10);
+    const defaultTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    if (data.id) {
+      const idx = all.findIndex(e => e.id === data.id);
+      if (idx >= 0) {
+        all[idx] = { ...all[idx], ...data, updatedAt: Date.now() };
+      }
+    } else {
+      all.push({
+        id: uid(),
+        patientId: data.patientId,
+        date: data.date || defaultDate,
+        time: data.time || defaultTime,
+        title: data.title || 'Sessão Psicoterapêutica',
+        text: data.text || '',
+        createdAt: Date.now(),
+      });
+    }
+    setAll(KEYS.EVOLUTIONS, all);
+    return all;
+  }
+
+  function deleteEvolution(id) {
+    const all = getAll(KEYS.EVOLUTIONS).filter(e => e.id !== id);
+    setAll(KEYS.EVOLUTIONS, all);
   }
 
   // ─── PAYMENTS ────────────────────────────────────────────
@@ -291,6 +340,12 @@ const DB = (() => {
     );
   }
 
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
   function clearDemoData() {
     const demoIds = new Set(getPatients().filter(isDemoPatient).map(patient => patient.id));
     if (demoIds.size === 0) return;
@@ -298,6 +353,7 @@ const DB = (() => {
     setAll(KEYS.PATIENTS, getPatients().filter(patient => !demoIds.has(patient.id)));
     setAll(KEYS.PAYMENTS, getPayments().filter(payment => !demoIds.has(payment.patientId)));
     setAll(KEYS.CANCELS, getCancels().filter(cancel => !demoIds.has(cancel.patientId)));
+    setAll(KEYS.EVOLUTIONS, getEvolutions().filter(e => !demoIds.has(e.patientId)));
   }
 
   function importCollection(value, fallback) {
@@ -308,11 +364,12 @@ const DB = (() => {
 
   function exportBackup() {
     return {
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       patients: getPatients(),
       payments: getPayments(),
       cancels: getCancels(),
+      evolutions: getEvolutions(),
       settings: getSettings(),
     };
   }
@@ -325,6 +382,7 @@ const DB = (() => {
     setAll(KEYS.PATIENTS, importCollection(data.patients, []));
     setAll(KEYS.PAYMENTS, importCollection(data.payments, []));
     setAll(KEYS.CANCELS, importCollection(data.cancels, []));
+    setAll(KEYS.EVOLUTIONS, importCollection(data.evolutions, []));
     setStored(KEYS.SETTINGS, importCollection(data.settings, {}));
   }
 
@@ -342,7 +400,16 @@ const DB = (() => {
   // Seed demo data if no patients exist
   function seedDemoData() {
     if (getPatients().length > 0) return;
-    DEMO_PATIENTS.forEach(demo => savePatient({ ...demo, isDemo: true }));
+    DEMO_PATIENTS.forEach(demo => {
+      const p = savePatient({ ...demo, isDemo: true });
+      if (demo.notes) {
+        saveEvolution({
+          patientId: p.id,
+          title: 'Primeira Sessão / Anamnese',
+          text: `Paciente compareceu à primeira sessão. Queixa principal relatada: ${demo.notes}. Estabelecido enquadre terapêutico semanal.`,
+        });
+      }
+    });
 
     const month = getCurrentMonth();
     ensureMonthPayments(month);
@@ -355,11 +422,12 @@ const DB = (() => {
 
   return {
     getPatients, getPatient, savePatient, deletePatient, getActivePatients,
+    getEvolutions, saveEvolution, deleteEvolution,
     getPayments, getPaymentsByMonth, getPaymentForPatient, ensureMonthPayments,
     togglePayment, getMonthSummary,
     getCancels, isSessionCancelled, toggleCancel,
     getSettings, saveSettings,
-    getCurrentMonth, getWeekStart, getWeekDays, getDayName,
+    getCurrentMonth, getWeekStart, getWeekDays, getDayName, formatDate,
     formatCurrency, formatMonth, prevMonth, nextMonth,
     getInitials, getDayOfWeekName, seedDemoData, clearDemoData,
     exportBackup, importBackup, resetAll, uid,

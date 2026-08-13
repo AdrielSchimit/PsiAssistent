@@ -8,28 +8,25 @@ const SchedulePage = (() => {
     const weekDays = DB.getWeekDays(weekStart); // [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
     const currentMonthLabel = DB.formatMonth(weekStart.slice(0, 7));
     
-    // Render week navigation
     let html = `
-      <div class="page-container" style="padding-bottom:100px;">
+      <div class="page-container" style="padding-bottom:120px;">
         <div class="page-header">
           <h1 class="page-header__title">Minha <span>Agenda</span></h1>
+          <p style="font-size:13px; color:var(--text-muted); margin-top:2px;">Atendimentos organizados por dia da semana.</p>
         </div>
         
-        <div class="week-nav">
-          <button class="week-nav__btn" id="week-prev">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <div class="week-nav" style="box-shadow:var(--shadow-sm); border:1px solid var(--border);">
+          <button class="week-nav__btn" id="week-prev" title="Semana anterior">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
-          <div class="week-nav__title">${currentMonthLabel}</div>
-          <button class="week-nav__btn" id="week-next">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <div class="week-nav__title" style="font-weight:700;">${currentMonthLabel}</div>
+          <button class="week-nav__btn" id="week-next" title="Próxima semana">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
         </div>
     `;
 
     const patients = DB.getActivePatients();
-    
-    // Create days array (0 = Sunday, 1 = Monday, etc.)
-    // weekDays maps to: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun
     const dowMap = [1, 2, 3, 4, 5, 6, 0];
     const todayStr = new Date().toISOString().slice(0, 10);
 
@@ -37,9 +34,7 @@ const SchedulePage = (() => {
 
     weekDays.forEach((dateStr, i) => {
       const dow = dowMap[i];
-      // Find patients for this day of week
       let daySessions = patients.filter(p => parseInt(p.dayOfWeek) === dow);
-      // Sort by time
       daySessions.sort((a, b) => a.time.localeCompare(b.time));
 
       if (daySessions.length > 0) {
@@ -49,22 +44,24 @@ const SchedulePage = (() => {
         
         html += `
           <div class="day-group">
-            <div class="day-label ${isToday ? 'day-label--today' : ''}">
-              <div class="day-dot"></div>
-              ${DB.getDayName(dateStr)} ${d}/${m} ${isToday ? '(Hoje)' : ''}
+            <div class="day-label ${isToday ? 'day-label--today' : ''}" style="${isToday ? 'font-weight:800;' : ''}">
+              <div class="day-dot" style="${isToday ? 'background:var(--primary); box-shadow:0 0 0 4px var(--primary-glow);' : ''}"></div>
+              ${DB.getDayName(dateStr)} ${d}/${m} ${isToday ? '— (Hoje)' : ''}
             </div>
         `;
 
         daySessions.forEach(p => {
           const isCancelled = DB.isSessionCancelled(p.id, weekStart);
           html += `
-            <div class="session-item ${isCancelled ? 'session-item--cancelled' : ''}">
-              <div class="session-time">${p.time}</div>
+            <div class="session-item ${isCancelled ? 'session-item--cancelled' : ''}" style="cursor:pointer;" onclick="window.PatientsPage.openModal('${p.id}')">
+              <div class="session-time" style="font-weight:700;">${p.time}</div>
               <div class="session-patient">
-                <div class="session-patient__name">${p.name}</div>
-                <div class="session-patient__status">${isCancelled ? 'Cancelado' : 'Confirmado'}</div>
+                <div class="session-patient__name" style="font-weight:700;">${p.name}</div>
+                <div class="session-patient__status">
+                  ${isCancelled ? '❌ Sessão Cancelada' : '✅ Confirmado'} · ${p.modality === 'online' ? '💻 Online' : '🏢 Presencial'}
+                </div>
               </div>
-              <div class="cancel-toggle ${isCancelled ? 'cancelled' : 'active'}" data-pid="${p.id}" data-ws="${weekStart}">
+              <div class="cancel-toggle ${isCancelled ? 'cancelled' : 'active'}" data-pid="${p.id}" data-ws="${weekStart}" title="${isCancelled ? 'Reativar sessão' : 'Marcar falta/cancelamento'}" onclick="event.stopPropagation();">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   ${isCancelled 
                     ? '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>' 
@@ -93,12 +90,12 @@ const SchedulePage = (() => {
   }
 
   function onEnter() {
-    document.getElementById('week-prev').addEventListener('click', () => {
+    document.getElementById('week-prev')?.addEventListener('click', () => {
       currentDate.setDate(currentDate.getDate() - 7);
       Router.navigate('schedule', false);
     });
     
-    document.getElementById('week-next').addEventListener('click', () => {
+    document.getElementById('week-next')?.addEventListener('click', () => {
       currentDate.setDate(currentDate.getDate() + 7);
       Router.navigate('schedule', false);
     });
@@ -110,11 +107,11 @@ const SchedulePage = (() => {
         const ws = btn.getAttribute('data-ws');
         const isNowActive = DB.toggleCancel(pid, ws);
         
-        App.toast(isNowActive ? 'Sessão reativada' : 'Sessão cancelada', isNowActive ? 'success' : 'error');
+        App.toast(isNowActive ? 'Sessão confirmada/reativada ✅' : 'Sessão cancelada esta semana ❌', isNowActive ? 'success' : 'warning');
       });
     });
 
-    return window.Store.subscribe('db:change', ({ type }) => {
+    return window.Store?.subscribe('db:change', ({ type }) => {
       if (type === 'db:patients' || type === 'db:cancels') Router.refresh();
     });
   }
