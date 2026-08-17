@@ -3,6 +3,7 @@
 const InstallManager = (() => {
   let deferredPrompt = null;
   const HAS_INSTALLED_KEY = 'psy_has_installed';
+  const DISMISSED_INSTALL_KEY = 'psy_install_dismissed';
 
   function init() {
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -12,14 +13,18 @@ const InstallManager = (() => {
 
     window.addEventListener('appinstalled', () => {
       localStorage.setItem(HAS_INSTALLED_KEY, 'true');
+      localStorage.removeItem(DISMISSED_INSTALL_KEY);
       hideInstallScreen();
       App.toast('App instalado com sucesso! 🎉', 'success');
     });
   }
 
-  function isInstalledOrDismissed() {
-    // Check if running in standalone mode (already installed and opened as app)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  function isStandaloneMode() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  function isInstalled() {
+    const isStandalone = isStandaloneMode();
     if (isStandalone) {
       localStorage.setItem(HAS_INSTALLED_KEY, 'true');
       return true;
@@ -27,15 +32,52 @@ const InstallManager = (() => {
     return localStorage.getItem(HAS_INSTALLED_KEY) === 'true';
   }
 
-  function showInstallPrompt(onDone) {
-    if (isInstalledOrDismissed()) {
+  function isInstalledOrDismissed() {
+    if (isInstalled()) return true;
+    return localStorage.getItem(DISMISSED_INSTALL_KEY) === 'true';
+  }
+
+  function getInstallInstructions() {
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isIOS) {
+      return '📱 Para instalar no iPhone:\n\n1. Toque no botão Compartilhar (quadrado com seta no rodapé do Safari)\n2. Role para baixo e selecione "Adicionar à Tela de Início"\n3. Toque em "Adicionar"';
+    }
+    return '📱 Para instalar no Android:\n\nToque nos 3 pontinhos do Chrome (topo direito) e selecione "Instalar aplicativo" ou "Adicionar à tela inicial".';
+  }
+
+  async function runNativeInstallPrompt() {
+    if (!deferredPrompt) return false;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+
+    if (outcome === 'accepted') {
+      localStorage.setItem(HAS_INSTALLED_KEY, 'true');
+      localStorage.removeItem(DISMISSED_INSTALL_KEY);
+      App.toast('App instalado com sucesso!', 'success');
+      return true;
+    }
+
+    localStorage.setItem(DISMISSED_INSTALL_KEY, 'true');
+    return false;
+  }
+
+  function showInstallPrompt(onDone, options = {}) {
+    const force = !!options.force;
+
+    if (isStandaloneMode()) {
+      App.toast('O PsyAssist já está aberto como aplicativo.', 'success');
+      if (onDone) onDone();
+      return;
+    }
+
+    if (!force && isInstalledOrDismissed()) {
       if (onDone) onDone();
       return;
     }
 
     if (document.getElementById('install-screen')) return;
-
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     const html = `
       <div id="install-screen" class="install-screen" style="position:fixed; inset:0; z-index:9999; background:rgba(13,12,29,0.7); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; padding:20px; animation:fadeIn 0.3s ease;">
@@ -87,33 +129,29 @@ const InstallManager = (() => {
 
     document.body.insertAdjacentHTML('beforeend', html);
 
-    const finish = () => {
-      localStorage.setItem(HAS_INSTALLED_KEY, 'true');
+    const finish = (dismissed = false) => {
+      if (dismissed) localStorage.setItem(DISMISSED_INSTALL_KEY, 'true');
       hideInstallScreen();
       if (onDone) setTimeout(onDone, 300);
     };
 
     document.getElementById('btn-install-app')?.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          finish();
-        }
-        deferredPrompt = null;
+      const installed = await runNativeInstallPrompt();
+      if (installed) {
+        finish(false);
       } else {
-        if (isIOS) {
-          alert('📱 Para instalar no iPhone:\n\n1. Toque no botão Compartilhar (quadrado com seta ⬆️ no rodapé do Safari)\n2. Role para baixo e selecione "Adicionar à Tela de Início (+)"\n3. Toque em "Adicionar"');
-        } else {
-          alert('📱 Para instalar no Android:\n\nToque nos 3 pontinhos do Chrome (topo direito) e selecione "Instalar aplicativo" ou "Adicionar à tela inicial".');
-        }
-        finish();
+        alert(getInstallInstructions());
+        finish(force ? false : true);
       }
     });
 
     document.getElementById('btn-dismiss-install')?.addEventListener('click', () => {
-      finish();
+      finish(true);
     });
+  }
+
+  function requestInstallFromSettings() {
+    showInstallPrompt(null, { force: true });
   }
 
   function hideInstallScreen() {
@@ -125,7 +163,7 @@ const InstallManager = (() => {
     }
   }
 
-  return { init, showInstallPrompt, isInstalledOrDismissed };
+  return { init, showInstallPrompt, isInstalledOrDismissed, requestInstallFromSettings };
 })();
 
 window.InstallManager = InstallManager;

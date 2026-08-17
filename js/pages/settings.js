@@ -91,6 +91,17 @@ const SettingsPage = (() => {
               </div>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </div>
+
+            <div class="settings-item" onclick="window.SettingsPage.installApp()" style="cursor:pointer; border-top:1px solid var(--border);">
+              <div class="settings-item__icon" style="background:rgba(249,115,22,0.12); color:var(--primary)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><rect x="5" y="19" width="14" height="2" rx="1"></rect></svg>
+              </div>
+              <div class="settings-item__content">
+                <div class="settings-item__label">Instalar Aplicativo</div>
+                <div class="settings-item__desc">Adicionar o PsyAssist na tela inicial do celular</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
           </div>
         </div>
 
@@ -146,6 +157,10 @@ const SettingsPage = (() => {
           <span style="display:inline-block; margin-top:6px; padding:4px 12px; background:var(--surface); border-radius:12px; font-weight:600; font-size:11px;">
             Desenvolvido com carinho para Psicólogos 💜
           </span>
+          <br>
+          <a href="https://skull-studio.vercel.app/" target="_blank" rel="noopener noreferrer" style="display:inline-block; margin-top:8px; color:var(--primary); font-weight:800; text-decoration:none;">
+            by "skull studio"
+          </a>
         </div>
         <input type="file" id="avatar-upload" accept="image/*" class="hidden">
       </div>
@@ -166,6 +181,14 @@ const SettingsPage = (() => {
   function replayTutorial() {
     DB.saveSettings({ tutorialDone: false });
     window.location.reload();
+  }
+
+  function installApp() {
+    if (!window.InstallManager?.requestInstallFromSettings) {
+      App.toast('Instalação indisponível neste navegador.', 'error');
+      return;
+    }
+    window.InstallManager.requestInstallFromSettings();
   }
 
   function exportData() {
@@ -382,7 +405,7 @@ const SettingsPage = (() => {
 
   return {
     render, onEnter, editProfile, editTemplateByKey,
-    exportData, exportPDF, clearData, changeTheme, managePIN, replayTutorial
+    exportData, exportPDF, clearData, changeTheme, managePIN, replayTutorial, installApp
   };
 })();
 
